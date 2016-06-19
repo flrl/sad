@@ -5,11 +5,13 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
+autoscan.log
 build-aux/
 config.h
 config.h.in
 config.log
 config.status
 configure
+configure.scan
 sad
 stamp-h1
