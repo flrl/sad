@@ -11,7 +11,7 @@ AC_PROG_CC
 AC_PROG_CC_C99
 
 dnl look for SDL
-AM_PATH_SDL2([2.0.4])
+AM_PATH_SDL2([2.0.4], , AC_MSG_ERROR([SDL2 not found]))
 
 AC_CHECK_HEADERS([stdio.h])
 
