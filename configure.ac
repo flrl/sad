@@ -1,9 +1,22 @@
 AC_PREREQ([2.69])
 AC_INIT([sad], [0.0], [whatever])
 
-dnl AC_CONFIG_SRCDIR([FIXME])
-#AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_SRCDIR([engine/main.c])
+AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
+
+AC_USE_SYSTEM_EXTENSIONS
+
+AC_PROG_CC
+AC_PROG_CC_C99
 
 dnl look for SDL
 AM_PATH_SDL2([2.0.4])
+
+AC_CHECK_HEADERS([stdio.h])
+
+AM_INIT_AUTOMAKE([foreign serial-tests silent-rules subdir-objects -Wall -Werror -Wno-portability])
+
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
