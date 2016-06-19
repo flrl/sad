@@ -15,7 +15,8 @@ AM_PATH_SDL2([2.0.4])
 
 AC_CHECK_HEADERS([stdio.h])
 
-AM_INIT_AUTOMAKE([foreign serial-tests silent-rules subdir-objects -Wall -Werror -Wno-portability])
+AM_INIT_AUTOMAKE([foreign serial-tests subdir-objects -Wall -Werror -Wno-portability])
+AM_SILENT_RULES([yes])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
