@@ -1,4 +1,5 @@
-AM_CFLAGS = -Wall -Wextra
+AM_CFLAGS = -Wall -Wextra $(SDL_CFLAGS)
+AM_LDFLAGS = $(SDL_LIBS)
 
 bin_PROGRAMS = sad
 
