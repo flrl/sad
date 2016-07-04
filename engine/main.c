@@ -21,6 +21,15 @@ int main(int argc __attribute__((unused)),
                                   | SDL_RENDERER_PRESENTVSYNC;
     renderer = SDL_CreateRenderer(window, -1, renderer_flags);
 
+    SDL_Point rect_points[] = {
+        { 100, 100 },
+        { 300, 100 },
+        { 300, 200 },
+        { 100, 200 },
+        { 100, 100 },
+    };
+    int rect_points_count = 5;
+
     while (!shutdown) {
         SDL_Event e;
 
@@ -32,7 +41,12 @@ int main(int argc __attribute__((unused)),
             }
         }
 
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         SDL_RenderClear(renderer);
+
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderDrawLines(renderer, rect_points, rect_points_count);
+
         SDL_RenderPresent(renderer);
     }
 
