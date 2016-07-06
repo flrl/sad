@@ -15,3 +15,4 @@ configure
 configure.scan
 sad
 stamp-h1
+tools/mapedit
