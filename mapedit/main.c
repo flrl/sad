@@ -4,9 +4,7 @@
 
 #include <SDL.h>
 
-struct triangle {
-    SDL_Point p[3];
-};
+#include "mapedit/canvas.h"
 
 int main(int argc __attribute__((unused)),
          char **argv __attribute__((unused)))
@@ -14,7 +12,6 @@ int main(int argc __attribute__((unused)),
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     int shutdown = 0;
-    struct triangle *triangles;
     struct triangle triangle = {0};
     unsigned triangle_points = 0;
 
@@ -58,9 +55,7 @@ int main(int argc __attribute__((unused)),
                     triangle.p[triangle_points].x = e.button.x;
                     triangle.p[triangle_points].y = e.button.y;
                     if (triangle_points == 3) {
-                        if (triangles != NULL) break;
-                        triangles = malloc(sizeof *triangles);
-                        memcpy(triangles, &triangle, sizeof triangle);
+                        canvas_add_triangle(&triangle);
                         memset(&triangle, 0, sizeof triangle);
                         triangle_points = 0;
                     }
@@ -95,19 +90,12 @@ int main(int argc __attribute__((unused)),
             }
         }
 
-        if (triangles) {
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-
-            SDL_RenderDrawLines(renderer, triangles->p, 3);
-            SDL_RenderDrawLine(renderer,
-                triangles->p[2].x, triangles->p[2].y,
-                triangles->p[0].x, triangles->p[0].y);
-        }
+        canvas_render(renderer);
 
         SDL_RenderPresent(renderer);
     }
 
-    free(triangles);
+    canvas_reset();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
