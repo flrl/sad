@@ -5,6 +5,7 @@
 
 enum tool_id {
     TOOL_NODEDRAW = 0,
+    TOOL_VERTMOVE,
 
     TOOL_LASTTOOL, /* keep last */
 };

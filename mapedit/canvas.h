@@ -20,6 +20,8 @@ vertex_id canvas_add_vertex(const SDL_Point *p);
 
 void canvas_vertex_set(vertex_id id, int x, int y);
 
+SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y);
+
 vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out);
 
 void canvas_render(SDL_Renderer *renderer);

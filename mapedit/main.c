@@ -36,6 +36,20 @@ int main(int argc __attribute__((unused)),
                 shutdown = 1;
                 break;
             }
+            else if (e.type == SDL_KEYUP) {
+                switch (e.key.keysym.sym) {
+                    case SDLK_n:
+                        tool->deselect();
+                        tool = &tools[TOOL_NODEDRAW];
+                        tool->select();
+                        break;
+                    case SDLK_v:
+                        tool->deselect();
+                        tool = &tools[TOOL_VERTMOVE];
+                        tool->select();
+                        break;
+                }
+            }
 
             tool->handle_event(&e);
         }
