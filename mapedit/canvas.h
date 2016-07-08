@@ -18,7 +18,7 @@ struct node {
 node_id   canvas_add_node(vertex_id v[3]);
 vertex_id canvas_add_vertex(const SDL_Point *p);
 
-void canvas_vertex_set(vertex_id id, int x, int y);
+void canvas_set_vertex(vertex_id id, const SDL_Point *p);
 
 SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y);
 

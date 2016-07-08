@@ -64,11 +64,10 @@ vertex_id canvas_add_vertex(const SDL_Point *p) {
     return id;
 }
 
-void canvas_vertex_set(vertex_id id, int x, int y) {
+void canvas_set_vertex(vertex_id id, const SDL_Point *p) {
     assert(id < verts_count);
 
-    verts[id].p.x = x;
-    verts[id].p.y = y;
+    verts[id].p = *p;
 }
 
 SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y) {
