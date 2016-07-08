@@ -11,4 +11,5 @@ sad_SOURCES =       \
 
 tools_mapedit_SOURCES = \
     mapedit/canvas.c    \
-    mapedit/main.c
+    mapedit/main.c      \
+    mapedit/tools.c
