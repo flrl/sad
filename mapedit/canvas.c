@@ -105,15 +105,79 @@ found:
     return id;
 }
 
-node_id   canvas_add_node(vertex_id v[3]) {
+const struct vertex *canvas_vertex(vertex_id id) {
+    assert(id < verts_count);
+
+    return &verts[id];
+}
+
+node_id canvas_add_node(vertex_id v[3]) {
     nodes_ensure(1);
 
     node_id id = nodes_count++;
 
+    nodes[id].id = id;
     nodes[id].v[0] = v[0];
     nodes[id].v[1] = v[1];
     nodes[id].v[2] = v[2];
     return id;
+}
+
+void canvas_delete_node(node_id id) {
+    assert(id < nodes_count);
+
+    nodes[id].id = ID_NONE;
+}
+
+static int cross(SDL_Point a, SDL_Point b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+static SDL_Point subtract(const SDL_Point *a, const SDL_Point *b) {
+    SDL_Point tmp;
+    tmp.x = a->x - b->x;
+    tmp.y = a->y - b->y;
+    return tmp;
+}
+
+static int same_side(const SDL_Point *p1, const SDL_Point *p2,
+                     const SDL_Point *a, const SDL_Point *b) {
+    int cp1 = cross(subtract(b,a), subtract(p1,a));
+    int cp2 = cross(subtract(b,a), subtract(p2,a));
+    if (cp1 >= 0 && cp2 >= 0)
+        return 1;
+    if (cp1 < 0 && cp2 < 0)
+        return 1;
+
+    return 0;
+}
+
+node_id canvas_find_node_at(const SDL_Point *p) {
+    node_id id;
+
+    for (id = 0; id < nodes_count; id++) {
+        struct node *node = &nodes[id];
+        if (node->id == ID_NONE) continue;
+
+        if (!same_side(p, &verts[node->v[2]].p, &verts[node->v[0]].p, &verts[node->v[1]].p))
+            continue;
+
+        if (!same_side(p, &verts[node->v[0]].p, &verts[node->v[1]].p, &verts[node->v[2]].p))
+            continue;
+
+        if (!same_side(p, &verts[node->v[1]].p, &verts[node->v[2]].p, &verts[node->v[0]].p))
+            continue;
+
+        return id;
+    }
+
+    return ID_NONE;
+}
+
+const struct node *canvas_node(node_id id) {
+    assert(id < nodes_count);
+
+    return &nodes[id];
 }
 
 void canvas_render(SDL_Renderer *renderer) {
@@ -123,6 +187,8 @@ void canvas_render(SDL_Renderer *renderer) {
 
     for (i = 0; i < nodes_count; i++) {
         const struct node *n = &nodes[i];
+        if (n->id == ID_NONE) continue;
+
         SDL_Point points[4] = {
             verts[n->v[0]].p,
             verts[n->v[1]].p,

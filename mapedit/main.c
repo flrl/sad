@@ -38,6 +38,11 @@ int main(int argc __attribute__((unused)),
             }
             else if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
+                    case SDLK_d:
+                        tool->deselect();
+                        tool = &tools[TOOL_NODEDEL];
+                        tool->select();
+                        break;
                     case SDLK_n:
                         tool->deselect();
                         tool = &tools[TOOL_NODEDRAW];

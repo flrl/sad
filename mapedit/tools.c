@@ -178,7 +178,69 @@ static void vertmove_render(SDL_Renderer *renderer) {
     SDL_RenderDrawPoint(renderer, state->orig_point.x, state->orig_point.y);
 }
 
+/*** nodedel ***/
+
+static struct nodedel_state {
+    node_id over;
+} nodedel_state;
+
+static void nodedel_select(void) {
+    struct nodedel_state *state = &nodedel_state;
+    SDL_Point tmp;
+
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+
+    memset(state, 0, sizeof *state);
+    state->over = canvas_find_node_at(&tmp);
+}
+
+static void nodedel_deselect(void) {
+    struct nodedel_state *state = &nodedel_state;
+
+    memset(state, 0, sizeof *state);
+    state->over = ID_NONE;
+}
+
+static int nodedel_handle_event(const SDL_Event *e) {
+    struct nodedel_state *state = &nodedel_state;
+    SDL_Point tmp;
+
+    switch (e->type) {
+        case SDL_MOUSEMOTION:
+            tmp.x = e->motion.x;
+            tmp.y = e->motion.y;
+            state->over = canvas_find_node_at(&tmp);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (e->button.button != SDL_BUTTON_LEFT) break;
+            if (state->over == ID_NONE) break;
+            canvas_delete_node(state->over);
+            state->over = ID_NONE;
+            break;
+    }
+
+    return 0;
+}
+
+static void nodedel_render(SDL_Renderer *renderer) {
+    struct nodedel_state *state = &nodedel_state;
+    if (state->over == ID_NONE) return;
+
+    const struct node *node = canvas_node(state->over);
+
+    SDL_Point points[4] = {
+        canvas_vertex(node->v[0])->p,
+        canvas_vertex(node->v[1])->p,
+        canvas_vertex(node->v[2])->p,
+        canvas_vertex(node->v[0])->p,
+    };
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderDrawLines(renderer, points, 4);
+}
+
 struct tool tools[] = {
     { &nodedraw_select, &nodedraw_deselect, &nodedraw_handle_event, &nodedraw_render },
     { &vertmove_select, &vertmove_deselect, &vertmove_handle_event, &vertmove_render },
+    { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render },
 };
