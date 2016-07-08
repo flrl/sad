@@ -12,8 +12,8 @@ int main(int argc __attribute__((unused)),
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     int shutdown = 0;
-    struct triangle triangle = {0};
-    unsigned triangle_points = 0;
+    struct node new_node = {0};
+    unsigned new_node_points = 0;
 
     const uint32_t window_flags = 0;
     window = SDL_CreateWindow("hello world",
@@ -34,30 +34,30 @@ int main(int argc __attribute__((unused)),
                     shutdown = 1;
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                    if (triangle_points >= 3) break;
-                    triangle.p[triangle_points].x = e.button.x;
-                    triangle.p[triangle_points].y = e.button.y;
-                    if (triangle_points == 0) {
-                        triangle_points ++;
-                        triangle.p[triangle_points].x = e.button.x;
-                        triangle.p[triangle_points].y = e.button.y;
+                    if (new_node_points >= 3) break;
+                    new_node.p[new_node_points].x = e.button.x;
+                    new_node.p[new_node_points].y = e.button.y;
+                    if (new_node_points == 0) {
+                        new_node_points ++;
+                        new_node.p[new_node_points].x = e.button.x;
+                        new_node.p[new_node_points].y = e.button.y;
                     }
                     break;
                 case SDL_MOUSEMOTION:
-                    if (triangle_points == 0) break;
-                    if (triangle_points >= 3) break;
-                    triangle.p[triangle_points].x = e.button.x;
-                    triangle.p[triangle_points].y = e.button.y;
+                    if (new_node_points == 0) break;
+                    if (new_node_points >= 3) break;
+                    new_node.p[new_node_points].x = e.button.x;
+                    new_node.p[new_node_points].y = e.button.y;
                     break;
                 case SDL_MOUSEBUTTONUP:
-                    if (triangle_points >= 3) break;
-                    triangle_points ++;
-                    triangle.p[triangle_points].x = e.button.x;
-                    triangle.p[triangle_points].y = e.button.y;
-                    if (triangle_points == 3) {
-                        canvas_add_triangle(&triangle);
-                        memset(&triangle, 0, sizeof triangle);
-                        triangle_points = 0;
+                    if (new_node_points >= 3) break;
+                    new_node_points ++;
+                    new_node.p[new_node_points].x = e.button.x;
+                    new_node.p[new_node_points].y = e.button.y;
+                    if (new_node_points == 3) {
+                        canvas_add_node(&new_node);
+                        memset(&new_node, 0, sizeof new_node);
+                        new_node_points = 0;
                     }
                     break;
             }
@@ -68,21 +68,21 @@ int main(int argc __attribute__((unused)),
 
         if (shutdown) break;
 
-        if (triangle_points) {
+        if (new_node_points) {
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-            switch (triangle_points) {
+            switch (new_node_points) {
                 case 1:
                     SDL_RenderDrawLine(renderer,
-                        triangle.p[0].x, triangle.p[0].y,
-                        triangle.p[1].x, triangle.p[1].y);
+                        new_node.p[0].x, new_node.p[0].y,
+                        new_node.p[1].x, new_node.p[1].y);
                     break;
                 case 2:
                 case 3:
-                    SDL_RenderDrawLines(renderer, triangle.p, 3);
+                    SDL_RenderDrawLines(renderer, new_node.p, 3);
                     SDL_RenderDrawLine(renderer,
-                        triangle.p[2].x, triangle.p[2].y,
-                        triangle.p[0].x, triangle.p[0].y);
+                        new_node.p[2].x, new_node.p[2].y,
+                        new_node.p[0].x, new_node.p[0].y);
                     break;
 
                 default:
