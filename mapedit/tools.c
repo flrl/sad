@@ -26,6 +26,10 @@ static int nodedraw_handle_event(const SDL_Event *e) {
     int i;
 
     switch (e->type) {
+        case SDL_KEYUP:
+            if (e->key.keysym.sym == SDLK_ESCAPE)
+                state->n_points = 0;
+            break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points >= 3) break;
