@@ -57,6 +57,10 @@ int main(int argc __attribute__((unused)),
                     new_node[new_node_points] = tmp;
                     break;
                 case SDL_MOUSEBUTTONUP:
+                    if (e.button.button == SDL_BUTTON_RIGHT) {
+                        new_node_points = 0;
+                        break;
+                    }
                     if (new_node_points >= 3) break;
                     new_node_points ++;
                     tmp.x = e.button.x;
@@ -77,10 +81,10 @@ int main(int argc __attribute__((unused)),
             }
         }
 
+        if (shutdown) break;
+
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         SDL_RenderClear(renderer);
-
-        if (shutdown) break;
 
         canvas_render(renderer);
 
