@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 
 #include "mapedit/canvas.h"
@@ -12,6 +13,7 @@ static void nodes_ensure(size_t n) {
     }
     else if (!nodes) {
         nodes = malloc(n * sizeof nodes[0]);
+        assert(nodes != NULL);
         nodes_alloc = n;
         nodes_count = 0;
     }
@@ -20,6 +22,7 @@ static void nodes_ensure(size_t n) {
             nodes_alloc += nodes_alloc;
 
         nodes = realloc(nodes, nodes_alloc * sizeof nodes[0]);
+        assert(nodes != NULL);
     }
 }
 
