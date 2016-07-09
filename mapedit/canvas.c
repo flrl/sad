@@ -216,6 +216,9 @@ node_id canvas_add_node(vertex_id v[3])
 {
     size_t i;
 
+    if (v[0] == v[1] || v[1] == v[2] || v[2] == v[0])
+        return ID_NONE;
+
     nodes_ensure(1);
 
     node_id id = nodes_count++;
