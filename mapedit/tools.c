@@ -31,8 +31,44 @@ static int nodedraw_handle_event(const SDL_Event *e)
 
     switch (e->type) {
         case SDL_KEYUP:
-            if (e->key.keysym.sym == SDLK_ESCAPE)
+            if (e->key.keysym.sym == SDLK_ESCAPE) {
                 state->n_points = 0;
+                break;
+            }
+            if (state->n_points == 0) break;
+            if (state->n_points >= 3) break;
+            if (e->key.keysym.sym == SDLK_RETURN) {
+                /* nasty c&p from mouseup */
+                state->n_points ++;
+                if (state->n_points < 3) {
+                    /* start next point at current location */
+                    state->points[state->n_points] = tmp;
+                    break;
+                }
+                else {
+                    vertex_id v[3];
+                    for (i = 0; i < 3; i++) {
+                        v[i] = canvas_find_vertex_near(&state->points[i], 0, NULL);
+                        if (v[i] == ID_NONE)
+                            v[i] = canvas_add_vertex(&state->points[i]);
+                    }
+                    canvas_add_node(v);
+                    state->n_points = 0;
+                }
+                break;
+            }
+            break;
+        case SDL_KEYDOWN:
+            if (state->n_points == 0) break;
+            if (state->n_points >= 3) break;
+            tmp.x = tmp.y = 0;
+            if (e->key.keysym.sym == SDLK_DOWN) tmp.y ++;
+            if (e->key.keysym.sym == SDLK_UP) tmp.y --;
+            if (e->key.keysym.sym == SDLK_LEFT) tmp.x --;
+            if (e->key.keysym.sym == SDLK_RIGHT) tmp.x ++;
+            if (tmp.x == 0 && tmp.y == 0) break;
+            state->points[state->n_points].x += tmp.x;
+            state->points[state->n_points].y += tmp.y;
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
@@ -91,16 +127,17 @@ static void nodedraw_render(SDL_Renderer *renderer)
 
     if (!state->n_points) return;
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
     switch (state->n_points) {
         case 1:
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             SDL_RenderDrawLine(renderer,
                 state->points[0].x, state->points[0].y,
                 state->points[1].x, state->points[1].y);
             break;
         case 2:
         case 3:
+            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
             SDL_RenderDrawLines(renderer, state->points, 3);
             SDL_RenderDrawLine(renderer,
                 state->points[2].x, state->points[2].y,
