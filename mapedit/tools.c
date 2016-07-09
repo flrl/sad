@@ -9,19 +9,22 @@ static struct nodedraw_state {
     unsigned n_points;
 } nodedraw_state;
 
-static void nodedraw_select(void) {
+static void nodedraw_select(void)
+{
     struct nodedraw_state *state = &nodedraw_state;
 
     memset(state, 0, sizeof *state);
 }
 
-static void nodedraw_deselect() {
+static void nodedraw_deselect()
+{
     struct nodedraw_state *state = &nodedraw_state;
 
     memset(state, 0, sizeof *state);
 }
 
-static int nodedraw_handle_event(const SDL_Event *e) {
+static int nodedraw_handle_event(const SDL_Event *e)
+{
     struct nodedraw_state *state = &nodedraw_state;
     SDL_Point tmp;
     int i;
@@ -82,7 +85,8 @@ static int nodedraw_handle_event(const SDL_Event *e) {
     return 0;
 }
 
-static void nodedraw_render(SDL_Renderer *renderer) {
+static void nodedraw_render(SDL_Renderer *renderer)
+{
     struct nodedraw_state *state = &nodedraw_state;
 
     if (!state->n_points) return;
@@ -115,21 +119,24 @@ static struct vertmove_state {
     SDL_Point orig_point;
 } vertmove_state;
 
-static void vertmove_select(void) {
+static void vertmove_select(void)
+{
     struct vertmove_state *state = &vertmove_state;
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
 }
 
-static void vertmove_deselect(void) {
+static void vertmove_deselect(void)
+{
     struct vertmove_state *state = &vertmove_state;
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
 }
 
-static int vertmove_handle_event(const SDL_Event *e) {
+static int vertmove_handle_event(const SDL_Event *e)
+{
     struct vertmove_state *state = &vertmove_state;
     SDL_Point tmp;
     vertex_id vid;
@@ -169,7 +176,8 @@ static int vertmove_handle_event(const SDL_Event *e) {
     return 0;
 }
 
-static void vertmove_render(SDL_Renderer *renderer) {
+static void vertmove_render(SDL_Renderer *renderer)
+{
     struct vertmove_state *state = &vertmove_state;
 
     if (state->selected == ID_NONE) return;
@@ -184,7 +192,8 @@ static struct nodedel_state {
     node_id over;
 } nodedel_state;
 
-static void nodedel_select(void) {
+static void nodedel_select(void)
+{
     struct nodedel_state *state = &nodedel_state;
     SDL_Point tmp;
 
@@ -194,14 +203,16 @@ static void nodedel_select(void) {
     state->over = canvas_find_node_at(&tmp);
 }
 
-static void nodedel_deselect(void) {
+static void nodedel_deselect(void)
+{
     struct nodedel_state *state = &nodedel_state;
 
     memset(state, 0, sizeof *state);
     state->over = ID_NONE;
 }
 
-static int nodedel_handle_event(const SDL_Event *e) {
+static int nodedel_handle_event(const SDL_Event *e)
+{
     struct nodedel_state *state = &nodedel_state;
     SDL_Point tmp;
 
@@ -222,7 +233,8 @@ static int nodedel_handle_event(const SDL_Event *e) {
     return 0;
 }
 
-static void nodedel_render(SDL_Renderer *renderer) {
+static void nodedel_render(SDL_Renderer *renderer)
+{
     struct nodedel_state *state = &nodedel_state;
     if (state->over == ID_NONE) return;
 

@@ -13,7 +13,8 @@ static struct node *nodes = NULL;
 static size_t nodes_alloc = 0;
 static size_t nodes_count = 0;
 
-static void verts_ensure(size_t n) {
+static void verts_ensure(size_t n)
+{
     if (verts_alloc >= verts_count + n) {
         return;
     }
@@ -36,7 +37,8 @@ static void verts_ensure(size_t n) {
     }
 }
 
-static void nodes_ensure(size_t n) {
+static void nodes_ensure(size_t n)
+{
     if (nodes_alloc >= nodes_count + n) {
         return;
     }
@@ -59,7 +61,8 @@ static void nodes_ensure(size_t n) {
     }
 }
 
-static void vertex_nodes_ensure(struct vertex *vertex, size_t n) {
+static void vertex_nodes_ensure(struct vertex *vertex, size_t n)
+{
     size_t i;
 
     if (vertex->nodes_alloc >= vertex->nodes_count + n) {
@@ -85,7 +88,8 @@ static void vertex_nodes_ensure(struct vertex *vertex, size_t n) {
     }
 }
 
-vertex_id canvas_add_vertex(const SDL_Point *p) {
+vertex_id canvas_add_vertex(const SDL_Point *p)
+{
     verts_ensure(1);
     vertex_id id = verts_count++;
     verts[id].id = id;
@@ -93,19 +97,22 @@ vertex_id canvas_add_vertex(const SDL_Point *p) {
     return id;
 }
 
-void canvas_del_vertex(vertex_id id) {
+void canvas_del_vertex(vertex_id id)
+{
     assert(id < verts_count);
 
     verts[id].id = ID_NONE;
 }
 
-void canvas_set_vertex(vertex_id id, const SDL_Point *p) {
+void canvas_set_vertex(vertex_id id, const SDL_Point *p)
+{
     assert(id < verts_count);
 
     verts[id].p = *p;
 }
 
-SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y) {
+SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y)
+{
     assert (id < verts_count);
 
     if (x) *x = verts[id].p.x;
@@ -114,7 +121,8 @@ SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y) {
     return verts[id].p;
 }
 
-vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out) {
+vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out)
+{
     vertex_id id;
 
     assert (snap2 >= 0);
@@ -141,13 +149,15 @@ found:
     return id;
 }
 
-const struct vertex *canvas_vertex(vertex_id id) {
+const struct vertex *canvas_vertex(vertex_id id)
+{
     assert(id < verts_count);
 
     return &verts[id];
 }
 
-static void vertex_add_nodeid(struct vertex *vertex, node_id nodeid) {
+static void vertex_add_nodeid(struct vertex *vertex, node_id nodeid)
+{
     size_t i;
     assert(nodeid < nodes_count);
 
@@ -158,7 +168,8 @@ static void vertex_add_nodeid(struct vertex *vertex, node_id nodeid) {
     vertex->nodes[vertex->nodes_count++] = nodeid;
 }
 
-static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid) {
+static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid)
+{
     size_t i;
     assert(nodeid < nodes_count);
 
@@ -177,7 +188,8 @@ static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid) {
         vertex->nodes[i] = ID_NONE;
 }
 
-node_id canvas_add_node(vertex_id v[3]) {
+node_id canvas_add_node(vertex_id v[3])
+{
     size_t i;
 
     nodes_ensure(1);
@@ -193,7 +205,8 @@ node_id canvas_add_node(vertex_id v[3]) {
     return id;
 }
 
-void canvas_delete_node(node_id id) {
+void canvas_delete_node(node_id id)
+{
     size_t i;
 
     assert(id < nodes_count);
@@ -206,11 +219,13 @@ void canvas_delete_node(node_id id) {
     }
 }
 
-static int cross(SDL_Point a, SDL_Point b) {
+static int cross(SDL_Point a, SDL_Point b)
+{
     return a.x * b.y - a.y * b.x;
 }
 
-static SDL_Point subtract(const SDL_Point *a, const SDL_Point *b) {
+static SDL_Point subtract(const SDL_Point *a, const SDL_Point *b)
+{
     SDL_Point tmp;
     tmp.x = a->x - b->x;
     tmp.y = a->y - b->y;
@@ -218,7 +233,8 @@ static SDL_Point subtract(const SDL_Point *a, const SDL_Point *b) {
 }
 
 static int same_side(const SDL_Point *p1, const SDL_Point *p2,
-                     const SDL_Point *a, const SDL_Point *b) {
+                     const SDL_Point *a, const SDL_Point *b)
+{
     int cp1 = cross(subtract(b,a), subtract(p1,a));
     int cp2 = cross(subtract(b,a), subtract(p2,a));
     if (cp1 >= 0 && cp2 >= 0)
@@ -229,7 +245,8 @@ static int same_side(const SDL_Point *p1, const SDL_Point *p2,
     return 0;
 }
 
-node_id canvas_find_node_at(const SDL_Point *p) {
+node_id canvas_find_node_at(const SDL_Point *p)
+{
     node_id id;
 
     for (id = 0; id < nodes_count; id++) {
@@ -251,13 +268,15 @@ node_id canvas_find_node_at(const SDL_Point *p) {
     return ID_NONE;
 }
 
-const struct node *canvas_node(node_id id) {
+const struct node *canvas_node(node_id id)
+{
     assert(id < nodes_count);
 
     return &nodes[id];
 }
 
-void canvas_render(SDL_Renderer *renderer) {
+void canvas_render(SDL_Renderer *renderer)
+{
     node_id i;
 
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
@@ -277,7 +296,8 @@ void canvas_render(SDL_Renderer *renderer) {
     }
 }
 
-void canvas_reset(void) {
+void canvas_reset(void)
+{
     if (nodes) free(nodes);
     nodes = NULL;
     nodes_count = nodes_alloc = 0;
@@ -287,7 +307,8 @@ void canvas_reset(void) {
     verts_count = verts_alloc = 0;
 }
 
-void canvas_save(const char *filename) {
+void canvas_save(const char *filename)
+{
     FILE *out = NULL;
     json_t *jverts = NULL;
     json_t *jnodes = NULL;
