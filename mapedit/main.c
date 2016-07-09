@@ -11,7 +11,6 @@
 const char *filename = NULL;
 
 static void filename_ok(const char *text, void *context);
-static void filename_cancel(void *context);
 
 int main(int argc, char **argv)
 {
@@ -67,8 +66,8 @@ int main(int argc, char **argv)
                         break;
                     case SDLK_s:
                         if ((e.key.keysym.mod & KMOD_SHIFT)) {
-                            prompt_start("filename", prompt_rect,
-                                         &filename_ok, &filename_cancel,
+                            prompt_start("filename? ", prompt_rect,
+                                         &filename_ok, NULL,
                                          NULL);
                             break;
                         }
@@ -116,9 +115,4 @@ int main(int argc, char **argv)
 static void filename_ok(const char *text, void *context __attribute__((unused)))
 {
     canvas_save(text);
-}
-
-static void filename_cancel(void *context __attribute__((unused)))
-{
-    fprintf(stderr, "prompt cancelled\n");
 }
