@@ -15,6 +15,9 @@ AC_CHECK_HEADERS([stdio.h])
 dnl look for SDL
 AM_PATH_SDL2([2.0.4], , AC_MSG_ERROR([SDL2 not found]))
 
+dnl look for SDL2_ttf
+PKG_CHECK_MODULES([SDL2_TTF], [SDL2_ttf], , AC_MSG_ERROR([SDL2_ttf not found]))
+
 dnl look for libjansson
 PKG_CHECK_MODULES([JANSSON], [jansson], , AC_MSG_ERROR([libjansson not found]))
 

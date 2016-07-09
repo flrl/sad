@@ -5,15 +5,20 @@
 #include <SDL.h>
 
 #include "mapedit/canvas.h"
+#include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 
 const char *filename = NULL;
+
+static void filename_ok(const char *text, void *context);
+static void filename_cancel(void *context);
 
 int main(int argc, char **argv)
 {
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     struct tool *tool = NULL;
+    const SDL_Rect prompt_rect = { 0, 280, 400, 20 };
     int shutdown = 0;
 
     if (argc > 1) {
@@ -34,6 +39,8 @@ int main(int argc, char **argv)
     tool = &tools[TOOL_NODEDRAW];
     tool->select();
 
+    prompt_init();
+
     while (!shutdown) {
         SDL_Event e;
 
@@ -42,7 +49,11 @@ int main(int argc, char **argv)
                 shutdown = 1;
                 break;
             }
-            else if (e.type == SDL_KEYUP) {
+
+            if (prompt_handle_event(&e))
+                break;
+
+            if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
                     case SDLK_d:
                         tool->deselect();
@@ -55,6 +66,12 @@ int main(int argc, char **argv)
                         tool->select();
                         break;
                     case SDLK_s:
+                        if ((e.key.keysym.mod & KMOD_SHIFT)) {
+                            prompt_start("filename", prompt_rect,
+                                         &filename_ok, &filename_cancel,
+                                         NULL);
+                            break;
+                        }
                         if (!filename) break;
                         canvas_save(filename);
                         break;
@@ -78,6 +95,8 @@ int main(int argc, char **argv)
 
         tool->render(renderer);
 
+        prompt_render(renderer);
+
         SDL_RenderPresent(renderer);
     }
 
@@ -85,9 +104,21 @@ int main(int argc, char **argv)
 
     tool->deselect();
 
+    prompt_destroy();
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
     SDL_Quit();
     return 0;
+}
+
+static void filename_ok(const char *text, void *context __attribute__((unused)))
+{
+    canvas_save(text);
+}
+
+static void filename_cancel(void *context __attribute__((unused)))
+{
+    fprintf(stderr, "prompt cancelled\n");
 }
