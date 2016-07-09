@@ -26,8 +26,11 @@ static void nodedraw_deselect()
 static int nodedraw_handle_event(const SDL_Event *e)
 {
     struct nodedraw_state *state = &nodedraw_state;
-    SDL_Point tmp;
+    SDL_Point mouse;
+    SDL_Point arrows;
     int i;
+
+    SDL_GetMouseState(&mouse.x, &mouse.y);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -42,7 +45,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
                 state->n_points ++;
                 if (state->n_points < 3) {
                     /* start next point at current location */
-                    state->points[state->n_points] = tmp;
+                    state->points[state->n_points] = mouse;
                     break;
                 }
                 else {
@@ -61,33 +64,29 @@ static int nodedraw_handle_event(const SDL_Event *e)
         case SDL_KEYDOWN:
             if (state->n_points == 0) break;
             if (state->n_points >= 3) break;
-            tmp.x = tmp.y = 0;
-            if (e->key.keysym.sym == SDLK_DOWN) tmp.y ++;
-            if (e->key.keysym.sym == SDLK_UP) tmp.y --;
-            if (e->key.keysym.sym == SDLK_LEFT) tmp.x --;
-            if (e->key.keysym.sym == SDLK_RIGHT) tmp.x ++;
-            if (tmp.x == 0 && tmp.y == 0) break;
-            state->points[state->n_points].x += tmp.x;
-            state->points[state->n_points].y += tmp.y;
+            arrows.x = arrows.y = 0;
+            if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
+            if (e->key.keysym.sym == SDLK_UP) arrows.y --;
+            if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
+            if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
+            if (arrows.x == 0 && arrows.y == 0) break;
+            state->points[state->n_points].x += arrows.x;
+            state->points[state->n_points].y += arrows.y;
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points >= 3) break;
-            tmp.x = e->button.x;
-            tmp.y = e->button.y;
-            canvas_find_vertex_near(&tmp, TOOL_SNAP2, &tmp);
-            state->points[state->n_points] = tmp;
+            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            state->points[state->n_points] = mouse;
             if (state->n_points == 0) {
                 /* start next point at current location */
-                state->points[++ state->n_points] = tmp;
+                state->points[++ state->n_points] = mouse;
             }
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0 || state->n_points >= 3) break;
-            tmp.x = e->motion.x;
-            tmp.y = e->motion.y;
-            canvas_find_vertex_near(&tmp, TOOL_SNAP2, &tmp);
-            state->points[state->n_points] = tmp;
+            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            state->points[state->n_points] = mouse;
             break;
         case SDL_MOUSEBUTTONUP:
             if (e->button.button == SDL_BUTTON_RIGHT) {
@@ -95,14 +94,12 @@ static int nodedraw_handle_event(const SDL_Event *e)
                 break;
             }
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            tmp.x = e->button.x;
-            tmp.y = e->button.y;
-            canvas_find_vertex_near(&tmp, TOOL_SNAP2, &tmp);
-            state->points[state->n_points] = tmp;
+            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            state->points[state->n_points] = mouse;
             state->n_points ++;
             if (state->n_points < 3) {
                 /* start next point at current location */
-                state->points[state->n_points] = tmp;
+                state->points[state->n_points] = mouse;
                 break;
             }
             else {
@@ -175,8 +172,10 @@ static void vertmove_deselect(void)
 static int vertmove_handle_event(const SDL_Event *e)
 {
     struct vertmove_state *state = &vertmove_state;
-    SDL_Point tmp;
+    SDL_Point mouse;
     vertex_id vid;
+
+    SDL_GetMouseState(&mouse.x, &mouse.y);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -187,25 +186,19 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            tmp.x = e->button.x;
-            tmp.y = e->button.y;
-            vid = canvas_find_vertex_near(&tmp, TOOL_SNAP2, &tmp);
+            vid = canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
             if (vid == ID_NONE) break;
             state->selected = vid;
             state->orig_point = canvas_get_vertex(vid, NULL, NULL);
             break;
         case SDL_MOUSEMOTION:
             if (state->selected == ID_NONE) break;
-            tmp.x = e->motion.x;
-            tmp.y = e->motion.y;
-            canvas_set_vertex(state->selected, &tmp);
+            canvas_set_vertex(state->selected, &mouse);
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->selected == ID_NONE) break;
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            tmp.x = e->button.x;
-            tmp.y = e->button.y;
-            canvas_set_vertex(state->selected, &tmp);
+            canvas_set_vertex(state->selected, &mouse);
             state->selected = ID_NONE;
             break;
     }
@@ -251,13 +244,13 @@ static void nodedel_deselect(void)
 static int nodedel_handle_event(const SDL_Event *e)
 {
     struct nodedel_state *state = &nodedel_state;
-    SDL_Point tmp;
+    SDL_Point mouse;
+
+    SDL_GetMouseState(&mouse.x, &mouse.y);
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
-            tmp.x = e->motion.x;
-            tmp.y = e->motion.y;
-            state->over = canvas_find_node_at(&tmp);
+            state->over = canvas_find_node_at(&mouse);
             break;
         case SDL_MOUSEBUTTONUP:
             if (e->button.button != SDL_BUTTON_LEFT) break;
