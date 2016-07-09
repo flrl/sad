@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 
     if (argc > 1) {
         filename = argv[1];
+        canvas_load(filename);
     }
 
     const uint32_t window_flags = 0;

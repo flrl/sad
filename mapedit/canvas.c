@@ -1,9 +1,14 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
+
+#include <sys/stat.h>
 
 #include <jansson.h>
 
 #include "mapedit/canvas.h"
+
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 static struct vertex *verts = NULL;
 static size_t verts_alloc = 0;
@@ -15,6 +20,8 @@ static size_t nodes_count = 0;
 
 static void verts_ensure(size_t n)
 {
+    size_t i;
+
     if (verts_alloc >= verts_count + n) {
         return;
     }
@@ -22,6 +29,8 @@ static void verts_ensure(size_t n)
         verts = malloc(n * sizeof verts[0]);
         assert(verts != NULL);
         memset(verts, 0, n * sizeof verts[0]);
+        for (i = 0; i < n; i++)
+            verts[i].id = ID_NONE;
         verts_alloc = n;
         verts_count = 0;
     }
@@ -34,11 +43,15 @@ static void verts_ensure(size_t n)
         memset(&verts[verts_count],
                0,
                (verts_alloc - verts_count) * sizeof verts[0]);
+        for (i = verts_count; i < verts_alloc; i++)
+            verts[i].id = ID_NONE;
     }
 }
 
 static void nodes_ensure(size_t n)
 {
+    size_t i;
+
     if (nodes_alloc >= nodes_count + n) {
         return;
     }
@@ -46,6 +59,8 @@ static void nodes_ensure(size_t n)
         nodes = malloc(n * sizeof nodes[0]);
         assert(nodes != NULL);
         memset(nodes, 0, n * sizeof nodes[0]);
+        for (i = 0; i < n; i++)
+            nodes[i].id = ID_NONE;
         nodes_alloc = n;
         nodes_count = 0;
     }
@@ -58,6 +73,8 @@ static void nodes_ensure(size_t n)
         memset(&nodes[nodes_count],
                0,
                (nodes_alloc - nodes_count) * sizeof nodes[0]);
+        for (i = nodes_count; i < nodes_alloc; i++)
+            nodes[i].id = ID_NONE;
     }
 }
 
@@ -302,7 +319,12 @@ void canvas_reset(void)
     nodes = NULL;
     nodes_count = nodes_alloc = 0;
 
-    if (verts) free(verts);
+    if (verts) {
+        size_t i;
+        for (i = 0; i < verts_alloc; i++)
+            if (verts[i].nodes) free(verts[i].nodes);
+        free(verts);
+    }
     verts = NULL;
     verts_count = verts_alloc = 0;
 }
@@ -381,4 +403,89 @@ void canvas_save(const char *filename)
     fprintf(stderr, "wrote canvas to %s\n", filename);
 
     json_decref(jcanvas);
+}
+
+void canvas_load(const char *filename)
+{
+    json_t *jcanvas = NULL;
+    json_t *jverts = NULL;
+    json_t *jnodes = NULL;
+    json_error_t error;
+    struct stat stat_buf;
+    const size_t flags = JSON_REJECT_DUPLICATES;
+
+    canvas_reset();
+
+    if (stat(filename, &stat_buf) < 0) {
+        fprintf(stderr, "unable to read %s: %s\n", filename, strerror(errno));
+        return;
+    }
+
+    jcanvas = json_load_file(filename, flags, &error);
+    if (!jcanvas) {
+        // FIXME print the error out?
+        return;
+    }
+
+    jverts = json_object_get(jcanvas, "vertices");
+
+    if (jverts) {
+        const char *key;
+        json_t *jvert;
+
+        /* n.b. these won't be in order, so be careful */
+        json_object_foreach(jverts, key, jvert) {
+            vertex_id id = strtoul(key, NULL, 10);
+            if (id >= verts_count)
+                verts_ensure(1 + id - verts_count);
+
+            verts[id].id = id;
+            verts_count = MAX(verts_count, id + 1);
+        }
+    }
+
+    jnodes = json_object_get(jcanvas, "nodes");
+
+    if (jnodes) {
+        const char *key;
+        json_t *jnode;
+
+        /* n.b. these won't be in order, so be careful */
+        json_object_foreach(jnodes, key, jnode) {
+            node_id id = strtoul(key, NULL, 10);
+            if (id >= nodes_count)
+                nodes_ensure(1 + id - nodes_count);
+
+            nodes[id].id = id;
+
+            json_unpack(jnode, "{ s: [i, i, i !] !}",
+                        "v", &nodes[id].v[0], &nodes[id].v[1], &nodes[id].v[2]);
+
+            nodes_count = MAX(nodes_count, id + 1);
+        }
+    }
+
+    if (jverts) {
+        const char *key;
+        json_t *jvert;
+
+        /* n.b. these won't be in order, so be careful */
+        json_object_foreach(jverts, key, jvert) {
+            vertex_id vid = strtoul(key, NULL, 10);
+            assert(verts[vid].id == vid);
+
+            json_t *jnode_ids = NULL;
+            json_unpack(jvert, "{ s: [i, i !], s: o !}",
+                        "p", &verts[vid].p.x, &verts[vid].p.y,
+                        "nodes", &jnode_ids);
+
+            size_t i;
+            json_t *jnode_id;
+            json_array_foreach(jnode_ids, i, jnode_id) {
+                int tmp;
+                json_unpack(jnode_id, "i", &tmp);
+                vertex_add_nodeid(&verts[vid], tmp);
+            }
+        }
+    }
 }

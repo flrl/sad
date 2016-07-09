@@ -36,5 +36,6 @@ void canvas_render(SDL_Renderer *renderer);
 void canvas_reset(void);
 
 void canvas_save(const char *filename);
+void canvas_load(const char *filename);
 
 #endif
