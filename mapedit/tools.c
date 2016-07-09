@@ -1,3 +1,6 @@
+#include <assert.h>
+#include <math.h>
+
 #include "mapedit/canvas.h"
 #include "mapedit/tools.h"
 
@@ -57,13 +60,58 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
     }
 }
 
+static const float _1SQRT2f = 1.0f / M_SQRT2;
+
+static float dotf(const float a[2], const float b[2])
+{
+    return a[0] * b[0] + a[1] * b[1];
+}
+
+static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
+{
+    const static float directions[8][2] = {
+        {      1.0f,  0.0f     },   // east
+        {  _1SQRT2f,  _1SQRT2f },   // northeast
+        {      0.0f,  1.0f     },   // north
+        { -_1SQRT2f,  _1SQRT2f },   // northwest
+        {     -1.0f,  0.0f     },   // west
+        { -_1SQRT2f, -_1SQRT2f },   // southwest
+        {      0.0f, -1.0f     },   // south
+        {  _1SQRT2f, -_1SQRT2f },   // southeast
+    };
+    const static size_t n_directions = 8;
+    const float vab[2] = { a.x - b.x, a.y - b.y };
+    const float vab_len = sqrtf(vab[0] * vab[0] + vab[1] * vab[1]);
+    size_t best_direction = 0;
+    float best_result = 0.0f;
+    size_t i;
+
+    assert(out != NULL);
+
+    for (i = 0; i < n_directions; i++) {
+        float quality = dotf(directions[i], vab);
+        if (quality < best_result) {
+            best_result = quality;
+            best_direction = i;
+        }
+    }
+
+    out->x = a.x + lroundf(vab_len * directions[best_direction][0]);
+    out->y = a.y + lround(vab_len * directions[best_direction][1]);
+}
+
 static int nodedraw_handle_event(const SDL_Event *e)
 {
     struct nodedraw_state *state = &nodedraw_state;
     SDL_Point mouse;
     SDL_Point arrows;
+    SDL_Keymod keymod;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
+    keymod = SDL_GetModState();
+    if ((keymod & KMOD_SHIFT) && state->n_points > 1)
+        mouse_rotsnap(state->points[state->n_points - 2],
+                      mouse, &mouse);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -101,7 +149,6 @@ static int nodedraw_handle_event(const SDL_Event *e)
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0 || state->n_points > 3) break;
             canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
-            nodedraw_edit_point(&mouse, NULL);
             nodedraw_next_point(mouse);
             break;
     }
@@ -170,7 +217,12 @@ static int vertmove_handle_event(const SDL_Event *e)
     SDL_Point arrows;
     vertex_id vid;
 
+    SDL_Keymod keymod;
+
     SDL_GetMouseState(&mouse.x, &mouse.y);
+    keymod = SDL_GetModState();
+    if ((keymod & KMOD_SHIFT) && state->selected != ID_NONE)
+        mouse_rotsnap(state->orig_point, mouse, &mouse);
 
     switch (e->type) {
         case SDL_KEYUP:
