@@ -37,6 +37,7 @@ int main(int argc, char **argv)
 
     tool = &tools[TOOL_NODEDRAW];
     tool->select();
+    SDL_SetWindowTitle(window, tool->desc);
 
     prompt_init();
 
@@ -58,11 +59,13 @@ int main(int argc, char **argv)
                         tool->deselect();
                         tool = &tools[TOOL_NODEDEL];
                         tool->select();
+                        SDL_SetWindowTitle(window, tool->desc);
                         break;
                     case SDLK_n:
                         tool->deselect();
                         tool = &tools[TOOL_NODEDRAW];
                         tool->select();
+                        SDL_SetWindowTitle(window, tool->desc);
                         break;
                     case SDLK_s:
                         if ((e.key.keysym.mod & KMOD_SHIFT)) {
@@ -78,6 +81,7 @@ int main(int argc, char **argv)
                         tool->deselect();
                         tool = &tools[TOOL_VERTMOVE];
                         tool->select();
+                        SDL_SetWindowTitle(window, tool->desc);
                         break;
                 }
             }

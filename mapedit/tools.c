@@ -348,7 +348,7 @@ static void nodedel_render(SDL_Renderer *renderer)
 }
 
 struct tool tools[] = {
-    { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render },
-    { &vertmove_select, &vertmove_deselect, &vertmove_handle_event, &vertmove_render },
-    { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render },
+    { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render, "draw nodes" },
+    { &vertmove_select, &vertmove_deselect, &vertmove_handle_event, &vertmove_render, "move vertices" },
+    { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render, "delete nodes" },
 };

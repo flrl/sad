@@ -23,6 +23,7 @@ struct tool {
     tool_deselect      *deselect;
     tool_event_handler *handle_event;
     tool_renderer      *render;
+    const char         *desc;
 };
 
 extern struct tool tools[TOOL_LASTTOOL];
