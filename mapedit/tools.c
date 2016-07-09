@@ -9,18 +9,52 @@ static struct nodedraw_state {
     unsigned n_points;
 } nodedraw_state;
 
-static void nodedraw_select(void)
+static void nodedraw_reset(void)
 {
     struct nodedraw_state *state = &nodedraw_state;
 
     memset(state, 0, sizeof *state);
 }
 
-static void nodedraw_deselect()
+static void nodedraw_next_point(SDL_Point p)
+{
+    struct nodedraw_state *state = &nodedraw_state;
+    vertex_id vid[3];
+    size_t i;
+
+    switch (state->n_points) {
+        case 0:
+            state->points[state->n_points++] = p;
+        case 1:
+        case 2:
+            state->points[state->n_points++] = p;
+            return;
+        case 3:
+        default:
+            for (i = 0; i < 3; i++) {
+                vid[i] = canvas_find_vertex_near(&state->points[i], 0, NULL);
+                if (vid[i] == ID_NONE)
+                    vid[i] = canvas_add_vertex(&state->points[i]);
+            }
+            canvas_add_node(vid);
+            nodedraw_reset();
+    }
+}
+
+static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
 {
     struct nodedraw_state *state = &nodedraw_state;
 
-    memset(state, 0, sizeof *state);
+    if (state->n_points == 0 || state->n_points > 3)
+        return;
+
+    if (p_abs) {
+        state->points[state->n_points - 1] = *p_abs;
+    }
+    else if (p_rel) {
+        state->points[state->n_points - 1].x += p_rel->x;
+        state->points[state->n_points - 1].y += p_rel->y;
+    }
 }
 
 static int nodedraw_handle_event(const SDL_Event *e)
@@ -28,90 +62,47 @@ static int nodedraw_handle_event(const SDL_Event *e)
     struct nodedraw_state *state = &nodedraw_state;
     SDL_Point mouse;
     SDL_Point arrows;
-    int i;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
 
     switch (e->type) {
         case SDL_KEYUP:
-            if (e->key.keysym.sym == SDLK_ESCAPE) {
-                state->n_points = 0;
-                break;
-            }
-            if (state->n_points == 0) break;
-            if (state->n_points >= 3) break;
-            if (e->key.keysym.sym == SDLK_RETURN) {
-                /* nasty c&p from mouseup */
-                state->n_points ++;
-                if (state->n_points < 3) {
-                    /* start next point at current location */
-                    state->points[state->n_points] = mouse;
-                    break;
-                }
-                else {
-                    vertex_id v[3];
-                    for (i = 0; i < 3; i++) {
-                        v[i] = canvas_find_vertex_near(&state->points[i], 0, NULL);
-                        if (v[i] == ID_NONE)
-                            v[i] = canvas_add_vertex(&state->points[i]);
-                    }
-                    canvas_add_node(v);
-                    state->n_points = 0;
-                }
-                break;
-            }
+            if (state->n_points == 0 || state->n_points > 3) break;
+            if (e->key.keysym.sym == SDLK_ESCAPE)
+                nodedraw_reset();
+            else if (e->key.keysym.sym == SDLK_RETURN)
+                nodedraw_next_point(mouse);
             break;
         case SDL_KEYDOWN:
-            if (state->n_points == 0) break;
-            if (state->n_points >= 3) break;
+            if (state->n_points == 0 || state->n_points > 3) break;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
-            if (e->key.keysym.sym == SDLK_UP) arrows.y --;
-            if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
-            if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
-            if (arrows.x == 0 && arrows.y == 0) break;
-            state->points[state->n_points].x += arrows.x;
-            state->points[state->n_points].y += arrows.y;
+            else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
+            else if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
+            else if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
+            else break;
+            nodedraw_edit_point(NULL, &arrows);
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points >= 3) break;
             canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
-            state->points[state->n_points] = mouse;
-            if (state->n_points == 0) {
-                /* start next point at current location */
-                state->points[++ state->n_points] = mouse;
-            }
+            nodedraw_edit_point(&mouse, NULL);
+            nodedraw_next_point(mouse);
             break;
         case SDL_MOUSEMOTION:
-            if (state->n_points == 0 || state->n_points >= 3) break;
+            if (state->n_points == 0 || state->n_points > 3) break;
             canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
-            state->points[state->n_points] = mouse;
+            nodedraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
-            if (e->button.button == SDL_BUTTON_RIGHT) {
-                state->n_points = 0;
-                break;
-            }
+            if (e->button.button == SDL_BUTTON_RIGHT)
+                nodedraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
+            if (state->n_points == 0 || state->n_points > 3) break;
             canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
-            state->points[state->n_points] = mouse;
-            state->n_points ++;
-            if (state->n_points < 3) {
-                /* start next point at current location */
-                state->points[state->n_points] = mouse;
-                break;
-            }
-            else {
-                vertex_id v[3];
-                for (i = 0; i < 3; i++) {
-                    v[i] = canvas_find_vertex_near(&state->points[i], 0, NULL);
-                    if (v[i] == ID_NONE)
-                        v[i] = canvas_add_vertex(&state->points[i]);
-                }
-                canvas_add_node(v);
-                state->n_points = 0;
-            }
+            nodedraw_edit_point(&mouse, NULL);
+            nodedraw_next_point(mouse);
             break;
     }
 
@@ -128,11 +119,14 @@ static void nodedraw_render(SDL_Renderer *renderer)
     switch (state->n_points) {
         case 1:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderDrawPoint(renderer, state->points[0].x, state->points[0].y);
+            break;
+        case 2:
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             SDL_RenderDrawLine(renderer,
                 state->points[0].x, state->points[0].y,
                 state->points[1].x, state->points[1].y);
             break;
-        case 2:
         case 3:
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
             SDL_RenderDrawLines(renderer, state->points, 3);
@@ -302,7 +296,7 @@ static void nodedel_render(SDL_Renderer *renderer)
 }
 
 struct tool tools[] = {
-    { &nodedraw_select, &nodedraw_deselect, &nodedraw_handle_event, &nodedraw_render },
+    { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render },
     { &vertmove_select, &vertmove_deselect, &vertmove_handle_event, &vertmove_render },
     { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render },
 };
