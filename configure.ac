@@ -10,10 +10,13 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AC_PROG_CC_C99
 
+AC_CHECK_HEADERS([stdio.h])
+
 dnl look for SDL
 AM_PATH_SDL2([2.0.4], , AC_MSG_ERROR([SDL2 not found]))
 
-AC_CHECK_HEADERS([stdio.h])
+dnl look for libjansson
+PKG_CHECK_MODULES([JANSSON], [jansson], , AC_MSG_ERROR([libjansson not found]))
 
 AM_INIT_AUTOMAKE([foreign serial-tests subdir-objects -Wall -Werror -Wno-portability])
 AM_SILENT_RULES([yes])

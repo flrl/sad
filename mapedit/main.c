@@ -7,13 +7,18 @@
 #include "mapedit/canvas.h"
 #include "mapedit/tools.h"
 
-int main(int argc __attribute__((unused)),
-         char **argv __attribute__((unused)))
+const char *filename = NULL;
+
+int main(int argc, char **argv)
 {
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     struct tool *tool = NULL;
     int shutdown = 0;
+
+    if (argc > 1) {
+        filename = argv[1];
+    }
 
     const uint32_t window_flags = 0;
     window = SDL_CreateWindow("hello world",
@@ -47,6 +52,10 @@ int main(int argc __attribute__((unused)),
                         tool->deselect();
                         tool = &tools[TOOL_NODEDRAW];
                         tool->select();
+                        break;
+                    case SDLK_s:
+                        if (!filename) break;
+                        canvas_save(filename);
                         break;
                     case SDLK_v:
                         tool->deselect();

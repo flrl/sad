@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <jansson.h>
+
 #include "mapedit/canvas.h"
 
 static struct vertex *verts = NULL;
@@ -283,4 +285,79 @@ void canvas_reset(void) {
     if (verts) free(verts);
     verts = NULL;
     verts_count = verts_alloc = 0;
+}
+
+void canvas_save(const char *filename) {
+    FILE *out = NULL;
+    json_t *jverts = NULL;
+    json_t *jnodes = NULL;
+    json_t *jcanvas = NULL;
+    char *out_data;
+    size_t i, j;
+
+    assert(filename != NULL);
+
+    jverts = json_object();
+    assert(jverts != NULL);
+
+    for (i = 0; i < verts_count; i++) {
+        const struct vertex *v = &verts[i];
+        char id_buf[16];
+        if (v->id == ID_NONE) continue;
+        fprintf(stderr, "\rgathering vertices (%zu/%zu)...", i + 1, verts_count);
+
+        json_t *jvp = json_pack("[i, i]", v->p.x, v->p.y);
+
+        json_t *jvn = json_array();
+        for (j = 0; j < v->nodes_count; j++) {
+            if (v->nodes[j] == ID_NONE) continue;
+            json_array_append_new(jvn, json_integer(v->nodes[j]));
+        }
+
+        json_t *jv = json_pack("{ s: o, s: o }",
+                               "p", jvp,
+                               "nodes", jvn);
+        snprintf(id_buf, sizeof id_buf, "%u", v->id);
+
+        json_object_set_new(jverts, id_buf, jv);
+    }
+    fprintf(stderr, " done\n");
+
+    jnodes = json_object();
+    assert(jverts != NULL);
+
+    for (i = 0; i < nodes_count; i++) {
+        const struct node *n = &nodes[i];
+        char id_buf[16];
+        if (n->id == ID_NONE) continue;
+        fprintf(stderr, "\rgathering nodes (%zu/%zu)...", i + 1, nodes_count);
+
+        json_t *jnv = json_pack("[i, i, i]", n->v[0], n->v[1], n->v[2]);
+
+        json_t *jn = json_pack("{ s: o }", "v", jnv);
+
+        snprintf(id_buf, sizeof id_buf, "%u", n->id);
+
+        json_object_set_new(jnodes, id_buf, jn);
+    }
+    fprintf(stderr, " done\n");
+
+    jcanvas = json_object();
+    assert(jcanvas != NULL);
+
+    json_object_set_new(jcanvas, "vertices", jverts);
+    json_object_set_new(jcanvas, "nodes", jnodes);
+
+    out = fopen(filename, "w");
+    assert(out != NULL);
+
+    out_data = json_dumps(jcanvas, JSON_PRESERVE_ORDER | JSON_INDENT(2));
+    fprintf(out, "%s\n", out_data);
+    free(out_data);
+
+    fclose(out);
+
+    fprintf(stderr, "wrote canvas to %s\n", filename);
+
+    json_decref(jcanvas);
 }
