@@ -173,16 +173,33 @@ static int vertmove_handle_event(const SDL_Event *e)
 {
     struct vertmove_state *state = &vertmove_state;
     SDL_Point mouse;
+    SDL_Point arrows;
     vertex_id vid;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
 
     switch (e->type) {
         case SDL_KEYUP:
-            if (e->key.keysym.sym != SDLK_ESCAPE) break;
             if (state->selected == ID_NONE) break;
-            canvas_set_vertex(state->selected, &state->orig_point);
-            state->selected = ID_NONE;
+            if (e->key.keysym.sym == SDLK_ESCAPE) {
+                canvas_set_vertex(state->selected, &state->orig_point);
+                state->selected = ID_NONE;
+                break;
+            }
+            if (e->key.keysym.sym == SDLK_RETURN) {
+                state->selected = ID_NONE;
+                break;
+            }
+            break;
+        case SDL_KEYDOWN:
+            if (state->selected == ID_NONE) break;
+            arrows.x = arrows.y = 0;
+            if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
+            if (e->key.keysym.sym == SDLK_UP) arrows.y --;
+            if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
+            if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
+            if (arrows.x == 0 && arrows.y == 0) break;
+            canvas_offset_vertex(state->selected, &arrows);
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
@@ -212,8 +229,11 @@ static void vertmove_render(SDL_Renderer *renderer)
 
     if (state->selected == ID_NONE) return;
 
+    const struct vertex *vertex = canvas_vertex(state->selected);
+
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderDrawPoint(renderer, state->orig_point.x, state->orig_point.y);
+    SDL_RenderDrawLine(renderer, state->orig_point.x, state->orig_point.y,
+                                 vertex->p.x, vertex->p.y);
 }
 
 /*** nodedel ***/

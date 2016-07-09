@@ -128,6 +128,13 @@ void canvas_set_vertex(vertex_id id, const SDL_Point *p)
     verts[id].p = *p;
 }
 
+void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
+{
+    assert(id < verts_count);
+    verts[id].p.x += p->x;
+    verts[id].p.y += p->y;
+}
+
 SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y)
 {
     assert (id < verts_count);
