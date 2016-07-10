@@ -13,15 +13,14 @@ static char *filename = NULL;
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static struct tool *tool = NULL;
+static int shutdown = 0;
 
-static int handle_events(void);
+static void handle_events(void);
 static void filename_ok(const char *text, void *context);
 static void update_window_title(void);
 
 int main(int argc, char **argv)
 {
-    int shutdown = 0;
-
     if (argc > 1) filename = strdup(argv[1]);
 
     const uint32_t window_flags = SDL_WINDOW_RESIZABLE;
@@ -44,7 +43,7 @@ int main(int argc, char **argv)
     update_window_title();
 
     while (!shutdown) {
-        shutdown = handle_events();
+        handle_events();
 
         if (shutdown) break;
 
@@ -75,13 +74,15 @@ int main(int argc, char **argv)
     return 0;
 }
 
-static int handle_events(void)
+static void handle_events(void)
 {
     SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
-        if (e.type == SDL_QUIT)
-            return 1;
+        if (e.type == SDL_QUIT) {
+            shutdown = 1;
+            return;
+        }
 
         if (prompt_handle_event(&e))
             continue;
@@ -110,13 +111,10 @@ static int handle_events(void)
                 tool->select();
                 break;
             case SDLK_s:
-                if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
-                    prompt("save as: ", filename,
-                            &filename_ok, NULL, NULL);
-                }
-                else {
+                if (!filename || (e.key.keysym.mod & KMOD_SHIFT))
+                    prompt("save as: ", filename, &filename_ok, NULL, NULL);
+                else
                     canvas_save(filename);
-                }
                 break;
             case SDLK_v:
                 tool->deselect();
@@ -125,8 +123,6 @@ static int handle_events(void)
                 break;
         }
     }
-
-    return 0;
 }
 
 static void filename_ok(const char *text, void *context __attribute__((unused)))
