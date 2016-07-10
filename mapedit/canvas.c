@@ -158,7 +158,7 @@ vertex_id canvas_add_vertex(const SDL_Point *p)
     return id;
 }
 
-void canvas_del_vertex(vertex_id id)
+void canvas_delete_vertex(vertex_id id)
 {
     assert(id < verts_count);
 
@@ -166,30 +166,18 @@ void canvas_del_vertex(vertex_id id)
     canvas_dirty();
 }
 
-void canvas_set_vertex(vertex_id id, const SDL_Point *p)
+void canvas_edit_vertex(vertex_id id, const SDL_Point *p_abs, const SDL_Point *p_rel)
 {
     assert(id < verts_count);
 
-    verts[id].p = *p;
+    if (p_abs) {
+        verts[id].p = *p_abs;
+    }
+    else if (p_rel) {
+        verts[id].p.x += p_rel->x;
+        verts[id].p.y += p_rel->y;
+    }
     canvas_dirty();
-}
-
-void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
-{
-    assert(id < verts_count);
-    verts[id].p.x += p->x;
-    verts[id].p.y += p->y;
-    canvas_dirty();
-}
-
-SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y)
-{
-    assert (id < verts_count);
-
-    if (x) *x = verts[id].p.x;
-    if (y) *y = verts[id].p.y;
-
-    return verts[id].p;
 }
 
 vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out)
@@ -272,6 +260,7 @@ node_id canvas_add_node(vertex_id v[3])
 
     nodes[id].id = id;
     for (i = 0; i < 3; i++) {
+        assert(verts[v[i]].id == v[i]);
         nodes[id].v[i] = v[i];
         vertex_add_nodeid(&verts[v[i]], id);
     }
@@ -290,7 +279,7 @@ void canvas_delete_node(node_id id)
     for (i = 0; i < 3; i++) {
         vertex_del_nodeid(&verts[nodes[id].v[i]], id);
         if (verts[nodes[id].v[i]].nodes_count == 0)
-            canvas_del_vertex(nodes[id].v[i]);
+            canvas_delete_vertex(nodes[id].v[i]);
     }
     canvas_dirty();
 }

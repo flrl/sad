@@ -222,7 +222,7 @@ static int vertmove_handle_event(const SDL_Event *e)
         case SDL_KEYUP:
             if (state->selected == ID_NONE) break;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
-                canvas_set_vertex(state->selected, &state->orig_point);
+                canvas_edit_vertex(state->selected, &state->orig_point, NULL);
                 state->selected = ID_NONE;
                 break;
             }
@@ -239,7 +239,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
             if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
             if (arrows.x == 0 && arrows.y == 0) break;
-            canvas_offset_vertex(state->selected, &arrows);
+            canvas_edit_vertex(state->selected, NULL, &arrows);
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
@@ -250,12 +250,12 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEMOTION:
             if (state->selected == ID_NONE) break;
-            canvas_set_vertex(state->selected, &mouse);
+            canvas_edit_vertex(state->selected, &mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->selected == ID_NONE) break;
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            canvas_set_vertex(state->selected, &mouse);
+            canvas_edit_vertex(state->selected, &mouse, NULL);
             state->selected = ID_NONE;
             break;
     }
