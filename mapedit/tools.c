@@ -194,15 +194,7 @@ static struct vertmove_state {
     SDL_Point orig_point;
 } vertmove_state;
 
-static void vertmove_select(void)
-{
-    struct vertmove_state *state = &vertmove_state;
-
-    memset(state, 0, sizeof *state);
-    state->selected = ID_NONE;
-}
-
-static void vertmove_deselect(void)
+static void vertmove_reset(void)
 {
     struct vertmove_state *state = &vertmove_state;
 
@@ -254,7 +246,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             vid = canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
             if (vid == ID_NONE) break;
             state->selected = vid;
-            state->orig_point = canvas_get_vertex(vid, NULL, NULL);
+            state->orig_point = canvas_vertex(vid)->p;
             break;
         case SDL_MOUSEMOTION:
             if (state->selected == ID_NONE) break;
@@ -356,6 +348,6 @@ static void nodedel_render(SDL_Renderer *renderer)
 
 struct tool tools[] = {
     { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render, "draw nodes" },
-    { &vertmove_select, &vertmove_deselect, &vertmove_handle_event, &vertmove_render, "move vertices" },
+    { &vertmove_reset, &vertmove_reset, &vertmove_handle_event, &vertmove_render, "move vertices" },
     { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render, "delete nodes" },
 };
