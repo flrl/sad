@@ -31,19 +31,3 @@ int camera_handle_event(const SDL_Event *e)
 {
     return 0;
 }
-
-SDL_Point add(SDL_Point a, SDL_Point b)
-{
-    SDL_Point result;
-    result.x = a.x + b.x;
-    result.y = a.y + b.y;
-    return result;
-}
-
-SDL_Point subtract(const SDL_Point *a, const SDL_Point *b)
-{
-    SDL_Point tmp;
-    tmp.x = a->x - b->x;
-    tmp.y = a->y - b->y;
-    return tmp;
-}

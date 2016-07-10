@@ -3,6 +3,7 @@
 
 #include "mapedit/camera.h"
 #include "mapedit/canvas.h"
+#include "mapedit/geometry.h"
 #include "mapedit/tools.h"
 
 static const int TOOL_SNAP2 = (5*5);
@@ -61,24 +62,17 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
     }
 }
 
-static const float _1SQRT2f = 1.0f / M_SQRT2;
-
-static float dotf(const float a[2], const float b[2])
-{
-    return a[0] * b[0] + a[1] * b[1];
-}
-
 static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
 {
     const static float directions[8][2] = {
-        {      1.0f,  0.0f     },   // east
-        {  _1SQRT2f,  _1SQRT2f },   // northeast
-        {      0.0f,  1.0f     },   // north
-        { -_1SQRT2f,  _1SQRT2f },   // northwest
-        {     -1.0f,  0.0f     },   // west
-        { -_1SQRT2f, -_1SQRT2f },   // southwest
-        {      0.0f, -1.0f     },   // south
-        {  _1SQRT2f, -_1SQRT2f },   // southeast
+        {        1.0f,  0.0f       },   // east
+        {  INV_SQRT2f,  INV_SQRT2f },   // northeast
+        {        0.0f,  1.0f       },   // north
+        { -INV_SQRT2f,  INV_SQRT2f },   // northwest
+        {       -1.0f,  0.0f       },   // west
+        { -INV_SQRT2f, -INV_SQRT2f },   // southwest
+        {        0.0f, -1.0f       },   // south
+        {  INV_SQRT2f, -INV_SQRT2f },   // southeast
     };
     const static size_t n_directions = 8;
     const float vab[2] = { a.x - b.x, a.y - b.y };
@@ -109,7 +103,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
     SDL_Keymod keymod;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = add(mouse, camera_offset);
+    mouse = addp(mouse, camera_offset);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->n_points > 1)
@@ -168,14 +162,14 @@ static void nodedraw_render(SDL_Renderer *renderer)
     if (!state->n_points) return;
 
     for (n = 0; n < state->n_points; n++) {
-        points[n] = subtract(&state->points[n], &camera_offset);
+        points[n] = subtractp(state->points[n], camera_offset);
     }
 
     switch (state->n_points) {
         case 1:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             /* complete the "line" */
-            points[n++] = subtract(&state->points[0], &camera_offset);
+            points[n++] = subtractp(state->points[0], camera_offset);
             break;
         case 2:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -183,7 +177,7 @@ static void nodedraw_render(SDL_Renderer *renderer)
         case 3:
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
             /* close the triangle */
-            points[n++] = subtract(&state->points[0], &camera_offset);
+            points[n++] = subtractp(state->points[0], camera_offset);
             break;
 
         default:
@@ -226,7 +220,7 @@ static int vertmove_handle_event(const SDL_Event *e)
     SDL_Keymod keymod;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = add(mouse, camera_offset);
+    mouse = addp(mouse, camera_offset);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->selected != ID_NONE)
@@ -286,8 +280,8 @@ static void vertmove_render(SDL_Renderer *renderer)
 
     const struct vertex *vertex = canvas_vertex(state->selected);
 
-    a = subtract(&state->orig_point, &camera_offset);
-    b = subtract(&vertex->p, &camera_offset);
+    a = subtractp(state->orig_point, camera_offset);
+    b = subtractp(vertex->p, camera_offset);
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
@@ -305,7 +299,7 @@ static void nodedel_select(void)
     SDL_Point mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = add(mouse, camera_offset);
+    mouse = addp(mouse, camera_offset);
 
     memset(state, 0, sizeof *state);
     state->over = canvas_find_node_at(&mouse);
@@ -325,7 +319,7 @@ static int nodedel_handle_event(const SDL_Event *e)
     SDL_Point mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = add(mouse, camera_offset);
+    mouse = addp(mouse, camera_offset);
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
@@ -350,10 +344,10 @@ static void nodedel_render(SDL_Renderer *renderer)
     const struct node *node = canvas_node(state->over);
 
     SDL_Point points[4] = {
-        subtract(&canvas_vertex(node->v[0])->p, &camera_offset),
-        subtract(&canvas_vertex(node->v[1])->p, &camera_offset),
-        subtract(&canvas_vertex(node->v[2])->p, &camera_offset),
-        subtract(&canvas_vertex(node->v[0])->p, &camera_offset),
+        subtractp(canvas_vertex(node->v[0])->p, camera_offset),
+        subtractp(canvas_vertex(node->v[1])->p, camera_offset),
+        subtractp(canvas_vertex(node->v[2])->p, camera_offset),
+        subtractp(canvas_vertex(node->v[0])->p, camera_offset),
     };
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);

@@ -8,6 +8,7 @@
 
 #include "mapedit/camera.h"
 #include "mapedit/canvas.h"
+#include "mapedit/geometry.h"
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -290,24 +291,6 @@ void canvas_delete_node(node_id id)
     is_dirty = 1;
 }
 
-static int cross(SDL_Point a, SDL_Point b)
-{
-    return a.x * b.y - a.y * b.x;
-}
-
-static int same_side(const SDL_Point *p1, const SDL_Point *p2,
-                     const SDL_Point *a, const SDL_Point *b)
-{
-    int cp1 = cross(subtract(b,a), subtract(p1,a));
-    int cp2 = cross(subtract(b,a), subtract(p2,a));
-    if (cp1 >= 0 && cp2 >= 0)
-        return 1;
-    if (cp1 < 0 && cp2 < 0)
-        return 1;
-
-    return 0;
-}
-
 node_id canvas_find_node_at(const SDL_Point *p)
 {
     node_id id;
@@ -316,13 +299,13 @@ node_id canvas_find_node_at(const SDL_Point *p)
         struct node *node = &nodes[id];
         if (node->id == ID_NONE) continue;
 
-        if (!same_side(p, &verts[node->v[2]].p, &verts[node->v[0]].p, &verts[node->v[1]].p))
+        if (!same_sidep(*p, verts[node->v[2]].p, verts[node->v[0]].p, verts[node->v[1]].p))
             continue;
 
-        if (!same_side(p, &verts[node->v[0]].p, &verts[node->v[1]].p, &verts[node->v[2]].p))
+        if (!same_sidep(*p, verts[node->v[0]].p, verts[node->v[1]].p, verts[node->v[2]].p))
             continue;
 
-        if (!same_side(p, &verts[node->v[1]].p, &verts[node->v[2]].p, &verts[node->v[0]].p))
+        if (!same_sidep(*p, verts[node->v[1]].p, verts[node->v[2]].p, verts[node->v[0]].p))
             continue;
 
         return id;
@@ -375,10 +358,10 @@ void canvas_render(SDL_Renderer *renderer)
             if (n->id == ID_NONE) continue;
 
             SDL_Point points[4] = {
-                subtract(&verts[n->v[0]].p, &camera_offset),
-                subtract(&verts[n->v[1]].p, &camera_offset),
-                subtract(&verts[n->v[2]].p, &camera_offset),
-                subtract(&verts[n->v[0]].p, &camera_offset),
+                subtractp(verts[n->v[0]].p, camera_offset),
+                subtractp(verts[n->v[1]].p, camera_offset),
+                subtractp(verts[n->v[2]].p, camera_offset),
+                subtractp(verts[n->v[0]].p, camera_offset),
             };
 
             SDL_RenderDrawLines(renderer, points, 4);
