@@ -53,7 +53,7 @@ void prompt_destroy(void)
     if (TTF_WasInit()) TTF_Quit();
 }
 
-void prompt(const char *query, const char *initial, SDL_Rect dstrect,
+void prompt(const char *query, const char *initial,
             prompt_ok_cb *ok_cb, prompt_cancel_cb *cancel_cb,
             void *cb_context)
 {
@@ -67,7 +67,6 @@ void prompt(const char *query, const char *initial, SDL_Rect dstrect,
     state->input = malloc(1024); // FIXME do this properly
     memset(state->input, 0, 1024);
     if (initial) strlcpy(state->input, initial, 1024);
-    state->dstrect = dstrect;
     state->ok_cb = ok_cb;
     state->cancel_cb = cancel_cb;
     state->cb_context = cb_context;
@@ -111,6 +110,9 @@ int prompt_handle_event(const SDL_Event *e)
     if (!state->in_use) return 0;
 
     switch (e->type) {
+        case SDL_WINDOWEVENT:
+            state->dirty = 1;
+            break;
         case SDL_KEYUP:
             handled = 1;
             break;
@@ -168,19 +170,23 @@ void prompt_render(SDL_Renderer *renderer)
 
             if (surface->w > viewport.w) {
                 state->srcrect.x = surface->w - viewport.w;
-                state->srcrect.y = 0;
                 state->srcrect.w = viewport.w;
-                state->srcrect.h = surface->h;
             }
             else {
-                state->srcrect.x = state->srcrect.y = 0;
+                state->srcrect.x = 0;
                 state->srcrect.w = surface->w;
-                state->srcrect.h = surface->h;
             }
+            state->srcrect.y = 0;
+            state->srcrect.h = surface->h;
+
+            state->dstrect.x = 0;
+            state->dstrect.y = viewport.h - surface->h;
             state->dstrect.w = state->srcrect.w;
             state->dstrect.h = state->srcrect.h;
+
             state->texture = SDL_CreateTextureFromSurface(renderer, surface);
             SDL_FreeSurface(surface);
+
             state->dirty = 0;
         }
     }

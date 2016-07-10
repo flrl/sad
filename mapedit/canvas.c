@@ -323,7 +323,13 @@ const struct node *canvas_node(node_id id)
 
 int canvas_handle_event(const SDL_Event *e)
 {
-    is_dirty = 1;
+    switch (e->type) {
+        case SDL_WINDOWEVENT:
+        case SDL_MOUSEWHEEL:
+            is_dirty = 1;
+            break;
+    }
+
     return 0;
 }
 

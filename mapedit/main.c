@@ -18,12 +18,11 @@ int main(int argc, char **argv)
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     struct tool *tool = NULL;
-    const SDL_Rect prompt_rect = { 0, 280, 400, 20 };
     int shutdown = 0;
 
     if (argc > 1) filename = strdup(argv[1]);
 
-    const uint32_t window_flags = 0;
+    const uint32_t window_flags = SDL_WINDOW_RESIZABLE;
     window = SDL_CreateWindow("hello world",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                               400, 300,
@@ -53,10 +52,10 @@ int main(int argc, char **argv)
             if (prompt_handle_event(&e))
                 break;
 
-            if (canvas_handle_event(&e))
+            if (camera_handle_event(&e))
                 break;
 
-            if (camera_handle_event(&e))
+            if (canvas_handle_event(&e))
                 break;
 
             if (e.type == SDL_KEYUP) {
@@ -75,7 +74,7 @@ int main(int argc, char **argv)
                         break;
                     case SDLK_s:
                         if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
-                            prompt("filename? ", filename, prompt_rect,
+                            prompt("filename? ", filename,
                                    &filename_ok, NULL, NULL);
                         }
                         else {
