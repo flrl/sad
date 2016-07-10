@@ -105,6 +105,7 @@ static void done_cancel(void)
 int prompt_handle_event(const SDL_Event *e)
 {
     struct prompt_state *state = &prompt_state;
+    SDL_Point mouse;
     int handled = 0;
 
     if (!state->in_use) return 0;
@@ -112,6 +113,13 @@ int prompt_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_WINDOWEVENT:
             state->dirty = 1;
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            mouse.x = e->button.x;
+            mouse.y = e->button.y;
+            if (!SDL_PointInRect(&mouse, &state->dstrect))
+                done_cancel();
+            handled = 1;
             break;
         case SDL_KEYUP:
             handled = 1;
@@ -168,9 +176,10 @@ void prompt_render(SDL_Renderer *renderer)
 
             SDL_RenderGetViewport(renderer, &viewport);
 
-            if (surface->w > viewport.w) {
-                state->srcrect.x = surface->w - viewport.w;
-                state->srcrect.w = viewport.w;
+            /* crop to window size, allowing 2 pixels for cursor */
+            if (surface->w + 2 > viewport.w) {
+                state->srcrect.x = surface->w + 2 - viewport.w;
+                state->srcrect.w = viewport.w - 2;
             }
             else {
                 state->srcrect.x = 0;
@@ -191,6 +200,19 @@ void prompt_render(SDL_Renderer *renderer)
         }
     }
 
-    if (state->texture)
+    if (state->texture) {
         SDL_RenderCopy(renderer, state->texture, &state->srcrect, &state->dstrect);
+
+        /* blinking cursor */
+        if (SDL_GetTicks() % 1000 > 500) {
+            SDL_SetRenderDrawColor(renderer,
+                                text_color.r, text_color.g, text_color.b,
+                                text_color.a);
+            SDL_RenderDrawLine(renderer,
+                            state->dstrect.x + state->dstrect.w,
+                            state->dstrect.y,
+                            state->dstrect.x + state->dstrect.w,
+                            state->dstrect.y + state->dstrect.h);
+        }
+    }
 }

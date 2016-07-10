@@ -74,7 +74,7 @@ int main(int argc, char **argv)
                         break;
                     case SDLK_s:
                         if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
-                            prompt("filename? ", filename,
+                            prompt("save as: ", filename,
                                    &filename_ok, NULL, NULL);
                         }
                         else {
