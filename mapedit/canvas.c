@@ -22,7 +22,10 @@ static size_t nodes_alloc = 0;
 static size_t nodes_count = 0;
 
 static SDL_Texture *texture = NULL;
-static int is_dirty = 0;
+static int is_data_dirty = 0;
+static int is_view_dirty = 0;
+
+#define canvas_dirty() do { is_data_dirty = is_view_dirty = 1; } while (0)
 
 static void canvas_reset(void)
 {
@@ -43,7 +46,7 @@ static void canvas_reset(void)
     texture = NULL;
 
     camera_centre.x = camera_centre.y = 0;
-    is_dirty = 0;
+    is_data_dirty = is_view_dirty = 0;
 }
 
 void canvas_init(const char *filename)
@@ -151,7 +154,7 @@ vertex_id canvas_add_vertex(const SDL_Point *p)
     vertex_id id = verts_count++;
     verts[id].id = id;
     verts[id].p = *p;
-    is_dirty = 1;
+    canvas_dirty();
     return id;
 }
 
@@ -160,7 +163,7 @@ void canvas_del_vertex(vertex_id id)
     assert(id < verts_count);
 
     verts[id].id = ID_NONE;
-    is_dirty = 1;
+    canvas_dirty();
 }
 
 void canvas_set_vertex(vertex_id id, const SDL_Point *p)
@@ -168,7 +171,7 @@ void canvas_set_vertex(vertex_id id, const SDL_Point *p)
     assert(id < verts_count);
 
     verts[id].p = *p;
-    is_dirty = 1;
+    canvas_dirty();
 }
 
 void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
@@ -176,7 +179,7 @@ void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
     assert(id < verts_count);
     verts[id].p.x += p->x;
     verts[id].p.y += p->y;
-    is_dirty = 1;
+    canvas_dirty();
 }
 
 SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y)
@@ -273,7 +276,7 @@ node_id canvas_add_node(vertex_id v[3])
         vertex_add_nodeid(&verts[v[i]], id);
     }
 
-    is_dirty = 1;
+    canvas_dirty();
     return id;
 }
 
@@ -289,7 +292,7 @@ void canvas_delete_node(node_id id)
         if (verts[nodes[id].v[i]].nodes_count == 0)
             canvas_del_vertex(nodes[id].v[i]);
     }
-    is_dirty = 1;
+    canvas_dirty();
 }
 
 node_id canvas_find_node_at(const SDL_Point *p)
@@ -327,7 +330,7 @@ int canvas_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_WINDOWEVENT:
         case SDL_MOUSEWHEEL:
-            is_dirty = 1;
+            is_view_dirty = 1;
             break;
     }
 
@@ -336,7 +339,7 @@ int canvas_handle_event(const SDL_Event *e)
 
 void canvas_render(SDL_Renderer *renderer)
 {
-    if (is_dirty || !texture) {
+    if (is_view_dirty || !texture) {
         SDL_Rect viewport;
         node_id i;
 
@@ -375,11 +378,16 @@ void canvas_render(SDL_Renderer *renderer)
         }
 
         SDL_SetRenderTarget(renderer, NULL);
-        is_dirty = 0;
+        is_view_dirty = 0;
     }
 
     if (texture)
         SDL_RenderCopy(renderer, texture, NULL, NULL);
+}
+
+int canvas_is_dirty(void)
+{
+    return is_data_dirty;
 }
 
 void canvas_save(const char *filename)
@@ -452,9 +460,10 @@ void canvas_save(const char *filename)
     free(out_data);
     fclose(out);
 
-    fprintf(stderr, "wrote canvas to %s\n", filename);
-
     json_decref(jcanvas);
+
+    fprintf(stderr, "wrote canvas to %s\n", filename);
+    is_data_dirty = 0;
 }
 
 void canvas_load(const char *filename)
@@ -542,4 +551,6 @@ void canvas_load(const char *filename)
             }
         }
     }
+
+    is_view_dirty = 1;
 }

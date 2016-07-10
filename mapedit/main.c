@@ -48,6 +48,8 @@ int main(int argc, char **argv)
 
         if (shutdown) break;
 
+        update_window_title();
+
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         SDL_RenderClear(renderer);
 
@@ -101,13 +103,11 @@ static int handle_events(void)
                 tool->deselect();
                 tool = &tools[TOOL_NODEDEL];
                 tool->select();
-                update_window_title();
                 break;
             case SDLK_n:
                 tool->deselect();
                 tool = &tools[TOOL_NODEDRAW];
                 tool->select();
-                update_window_title();
                 break;
             case SDLK_s:
                 if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
@@ -122,7 +122,6 @@ static int handle_events(void)
                 tool->deselect();
                 tool = &tools[TOOL_VERTMOVE];
                 tool->select();
-                update_window_title();
                 break;
         }
     }
@@ -135,14 +134,14 @@ static void filename_ok(const char *text, void *context __attribute__((unused)))
     if (filename) free(filename);
     filename = strdup(text);
     canvas_save(filename);
-    update_window_title();
 }
 
 static void update_window_title(void)
 {
     char buf[1024] = {0};
 
-    snprintf(buf, sizeof buf, "%s - %s",
+    snprintf(buf, sizeof buf, "%s%s - %s",
+        (filename && canvas_is_dirty()) ? "*" : "",
         filename ? filename : "(untitled)",
         tool ? tool->desc : "(no tool selected)");
 

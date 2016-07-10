@@ -39,6 +39,7 @@ const struct vertex *canvas_vertex(vertex_id id);
 int canvas_handle_event(const SDL_Event *e);
 void canvas_render(SDL_Renderer *renderer);
 
+int canvas_is_dirty(void);
 void canvas_save(const char *filename);
 void canvas_load(const char *filename);
 
