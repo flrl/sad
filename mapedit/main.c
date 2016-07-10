@@ -14,6 +14,7 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static struct tool *tool = NULL;
 
+static int handle_events(void);
 static void filename_ok(const char *text, void *context);
 static void update_window_title(void);
 
@@ -43,57 +44,7 @@ int main(int argc, char **argv)
     update_window_title();
 
     while (!shutdown) {
-        SDL_Event e;
-
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                shutdown = 1;
-                break;
-            }
-
-            if (prompt_handle_event(&e))
-                break;
-
-            if (camera_handle_event(&e))
-                break;
-
-            if (canvas_handle_event(&e))
-                break;
-
-            if (e.type == SDL_KEYUP) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_d:
-                        tool->deselect();
-                        tool = &tools[TOOL_NODEDEL];
-                        tool->select();
-                        update_window_title();
-                        break;
-                    case SDLK_n:
-                        tool->deselect();
-                        tool = &tools[TOOL_NODEDRAW];
-                        tool->select();
-                        update_window_title();
-                        break;
-                    case SDLK_s:
-                        if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
-                            prompt("save as: ", filename,
-                                   &filename_ok, NULL, NULL);
-                        }
-                        else {
-                            canvas_save(filename);
-                        }
-                        break;
-                    case SDLK_v:
-                        tool->deselect();
-                        tool = &tools[TOOL_VERTMOVE];
-                        tool->select();
-                        update_window_title();
-                        break;
-                }
-            }
-
-            tool->handle_event(&e);
-        }
+        shutdown = handle_events();
 
         if (shutdown) break;
 
@@ -101,9 +52,7 @@ int main(int argc, char **argv)
         SDL_RenderClear(renderer);
 
         canvas_render(renderer);
-
         tool->render(renderer);
-
         prompt_render(renderer);
 
         SDL_RenderPresent(renderer);
@@ -121,6 +70,63 @@ int main(int argc, char **argv)
     SDL_Quit();
 
     if (filename) free(filename);
+    return 0;
+}
+
+static int handle_events(void)
+{
+    SDL_Event e;
+
+    while (SDL_PollEvent(&e)) {
+        if (e.type == SDL_QUIT)
+            return 1;
+
+        if (prompt_handle_event(&e))
+            continue;
+
+        if (camera_handle_event(&e))
+            continue;
+
+        if (canvas_handle_event(&e))
+            continue;
+
+        if (tool->handle_event(&e))
+            continue;
+
+        if (e.type != SDL_KEYUP)
+            continue;
+
+        switch (e.key.keysym.sym) {
+            case SDLK_d:
+                tool->deselect();
+                tool = &tools[TOOL_NODEDEL];
+                tool->select();
+                update_window_title();
+                break;
+            case SDLK_n:
+                tool->deselect();
+                tool = &tools[TOOL_NODEDRAW];
+                tool->select();
+                update_window_title();
+                break;
+            case SDLK_s:
+                if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
+                    prompt("save as: ", filename,
+                            &filename_ok, NULL, NULL);
+                }
+                else {
+                    canvas_save(filename);
+                }
+                break;
+            case SDLK_v:
+                tool->deselect();
+                tool = &tools[TOOL_VERTMOVE];
+                tool->select();
+                update_window_title();
+                break;
+        }
+    }
+
     return 0;
 }
 
