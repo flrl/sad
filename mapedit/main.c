@@ -69,9 +69,8 @@ int main(int argc, char **argv)
                         break;
                     case SDLK_s:
                         if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
-                            prompt_start("filename? ", prompt_rect,
-                                         &filename_ok, NULL,
-                                         NULL);
+                            prompt("filename? ", filename, prompt_rect,
+                                   &filename_ok, NULL, NULL);
                         }
                         else {
                             canvas_save(filename);

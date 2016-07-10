@@ -12,16 +12,27 @@ typedef void (prompt_cancel_cb)(void *);
 
 static struct prompt_state {
     int in_use;
-    char *prompt;
+    int dirty;
+    char *query;
+    char *input;
+    SDL_Texture *texture;
     SDL_Rect dstrect;
     SDL_Rect srcrect;
     prompt_ok_cb *ok_cb;
     prompt_cancel_cb *cancel_cb;
-    void *context;
-    char *text;
-    int dirty;
-    SDL_Texture *texture;
+    void *cb_context;
 } prompt_state;
+
+static void prompt_state_reset(void)
+{
+    struct prompt_state *state = &prompt_state;
+
+    if (state->query) free(state->query);
+    if (state->input) free(state->input);
+    if (state->texture) SDL_DestroyTexture(state->texture);
+
+    memset(state, 0, sizeof *state);
+}
 
 void prompt_init(void)
 {
@@ -37,38 +48,31 @@ void prompt_destroy(void)
 {
     if (prompt_font) TTF_CloseFont(prompt_font);
     prompt_font = NULL;
+    prompt_state_reset();
 
     if (TTF_WasInit()) TTF_Quit();
 }
 
-void prompt_start(const char *prompt_text, SDL_Rect dstrect,
-                  prompt_ok_cb *ok_cb, prompt_cancel_cb *cancel_cb,
-                  void *prompt_context)
+void prompt(const char *query, const char *initial, SDL_Rect dstrect,
+            prompt_ok_cb *ok_cb, prompt_cancel_cb *cancel_cb,
+            void *cb_context)
 {
     struct prompt_state *state = &prompt_state;
 
     assert(!state->in_use);
 
     state->in_use = 1;
-    state->prompt = strdup(prompt_text);
+    state->dirty = 1;
+    if (query) state->query = strdup(query);
+    state->input = malloc(1024); // FIXME do this properly
+    memset(state->input, 0, 1024);
+    if (initial) strlcpy(state->input, initial, 1024);
     state->dstrect = dstrect;
     state->ok_cb = ok_cb;
     state->cancel_cb = cancel_cb;
-    state->context = prompt_context;
-    state->text = malloc(1024); // FIXME do this properly
-    memset(state->text, 0, 1024);
-    state->dirty = 1;
+    state->cb_context = cb_context;
 
     SDL_StartTextInput();
-}
-
-static void state_reset(struct prompt_state *state)
-{
-    if (state->prompt) free(state->prompt);
-    if (state->text) free(state->text);
-    if (state->texture) SDL_DestroyTexture(state->texture);
-
-    memset(state, 0, sizeof *state);
 }
 
 static void done_ok(void)
@@ -80,9 +84,9 @@ static void done_ok(void)
     SDL_StopTextInput();
 
     if (state->ok_cb)
-        state->ok_cb(state->text, state->context);
+        state->ok_cb(state->input, state->cb_context);
 
-    state_reset(state);
+    prompt_state_reset();
 }
 
 static void done_cancel(void)
@@ -94,9 +98,9 @@ static void done_cancel(void)
     SDL_StopTextInput();
 
     if (state->cancel_cb)
-        state->cancel_cb(state->context);
+        state->cancel_cb(state->cb_context);
 
-    state_reset(state);
+    prompt_state_reset();
 }
 
 int prompt_handle_event(const SDL_Event *e)
@@ -116,16 +120,16 @@ int prompt_handle_event(const SDL_Event *e)
             else if (e->key.keysym.sym == SDLK_ESCAPE)
                 done_cancel();
             else if (e->key.keysym.sym == SDLK_BACKSPACE) {
-                size_t len = strlen(state->text);
+                size_t len = strlen(state->input);
                 if (len) {
-                    state->text[len - 1] = '\0';
+                    state->input[len - 1] = '\0';
                     state->dirty = 1;
                 }
             }
             handled = 1;
             break;
         case SDL_TEXTINPUT:
-            strlcat(state->text, e->text.text, 1024);
+            strlcat(state->input, e->text.text, 1024);
             state->dirty = 1;
             handled = 1;
             break;
@@ -151,9 +155,9 @@ void prompt_render(SDL_Renderer *renderer)
             state->texture = NULL;
         }
 
-        len = strlen(state->prompt) + strlen(state->text) + 1;
+        len = strlen(state->query) + strlen(state->input) + 1;
         tmp = malloc(len);
-        snprintf(tmp, len, "%s%s", state->prompt, state->text);
+        snprintf(tmp, len, "%s%s", state->query, state->input);
         surface = TTF_RenderUTF8_Blended(prompt_font, tmp, text_color);
         free(tmp);
 
