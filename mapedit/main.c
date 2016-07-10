@@ -9,21 +9,22 @@
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 
-char *filename = NULL;
+static char *filename = NULL;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
+static struct tool *tool = NULL;
 
 static void filename_ok(const char *text, void *context);
+static void update_window_title(void);
 
 int main(int argc, char **argv)
 {
-    SDL_Window *window = NULL;
-    SDL_Renderer *renderer = NULL;
-    struct tool *tool = NULL;
     int shutdown = 0;
 
     if (argc > 1) filename = strdup(argv[1]);
 
     const uint32_t window_flags = SDL_WINDOW_RESIZABLE;
-    window = SDL_CreateWindow("hello world",
+    window = SDL_CreateWindow("(untitled) - (no tool selected)",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                               400, 300,
                               window_flags);
@@ -34,11 +35,12 @@ int main(int argc, char **argv)
 
     tool = &tools[TOOL_NODEDRAW];
     tool->select();
-    SDL_SetWindowTitle(window, tool->desc);
 
     camera_init(renderer);
     canvas_init(filename);
     prompt_init();
+
+    update_window_title();
 
     while (!shutdown) {
         SDL_Event e;
@@ -64,13 +66,13 @@ int main(int argc, char **argv)
                         tool->deselect();
                         tool = &tools[TOOL_NODEDEL];
                         tool->select();
-                        SDL_SetWindowTitle(window, tool->desc);
+                        update_window_title();
                         break;
                     case SDLK_n:
                         tool->deselect();
                         tool = &tools[TOOL_NODEDRAW];
                         tool->select();
-                        SDL_SetWindowTitle(window, tool->desc);
+                        update_window_title();
                         break;
                     case SDLK_s:
                         if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
@@ -85,7 +87,7 @@ int main(int argc, char **argv)
                         tool->deselect();
                         tool = &tools[TOOL_VERTMOVE];
                         tool->select();
-                        SDL_SetWindowTitle(window, tool->desc);
+                        update_window_title();
                         break;
                 }
             }
@@ -127,4 +129,16 @@ static void filename_ok(const char *text, void *context __attribute__((unused)))
     if (filename) free(filename);
     filename = strdup(text);
     canvas_save(filename);
+    update_window_title();
+}
+
+static void update_window_title(void)
+{
+    char buf[1024] = {0};
+
+    snprintf(buf, sizeof buf, "%s - %s",
+        filename ? filename : "(untitled)",
+        tool ? tool->desc : "(no tool selected)");
+
+    SDL_SetWindowTitle(window, buf);
 }
