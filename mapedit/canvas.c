@@ -9,6 +9,7 @@
 #include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/geometry.h"
+#include "mapedit/util.h"
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -443,13 +444,12 @@ void canvas_save(const char *filename)
     json_object_set_new(jcanvas, "vertices", jverts);
     json_object_set_new(jcanvas, "nodes", jnodes);
 
-    out = fopen(filename, "w");
+    out = fopen_with_backup(filename);
     assert(out != NULL);
-
     out_data = json_dumps(jcanvas, JSON_PRESERVE_ORDER | JSON_INDENT(2));
+    assert(out_data != NULL);
     fprintf(out, "%s\n", out_data);
     free(out_data);
-
     fclose(out);
 
     fprintf(stderr, "wrote canvas to %s\n", filename);

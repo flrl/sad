@@ -15,7 +15,8 @@ tools_mapedit_SOURCES = \
     mapedit/geometry.c  \
     mapedit/main.c      \
     mapedit/prompt.c    \
-    mapedit/tools.c
+    mapedit/tools.c     \
+    mapedit/util.c
 
 data_DATA = \
     data/Vera.ttf
