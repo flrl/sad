@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     const uint32_t window_flags = SDL_WINDOW_RESIZABLE;
     window = SDL_CreateWindow("(untitled) - (no tool selected)",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                              400, 300,
+                              800, 600,
                               window_flags);
 
     const uint32_t renderer_flags = SDL_RENDERER_ACCELERATED
