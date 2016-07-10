@@ -10,6 +10,7 @@ sad_SOURCES =       \
     engine/main.c
 
 tools_mapedit_SOURCES = \
+    mapedit/camera.c    \
     mapedit/canvas.c    \
     mapedit/main.c      \
     mapedit/prompt.c    \

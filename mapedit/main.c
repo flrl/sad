@@ -4,6 +4,7 @@
 
 #include <SDL.h>
 
+#include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
@@ -20,10 +21,7 @@ int main(int argc, char **argv)
     const SDL_Rect prompt_rect = { 0, 280, 400, 20 };
     int shutdown = 0;
 
-    if (argc > 1) {
-        filename = strdup(argv[1]);
-        canvas_load(filename);
-    }
+    if (argc > 1) filename = strdup(argv[1]);
 
     const uint32_t window_flags = 0;
     window = SDL_CreateWindow("hello world",
@@ -39,6 +37,8 @@ int main(int argc, char **argv)
     tool->select();
     SDL_SetWindowTitle(window, tool->desc);
 
+    camera_init(renderer);
+    canvas_init(filename);
     prompt_init();
 
     while (!shutdown) {
@@ -51,6 +51,12 @@ int main(int argc, char **argv)
             }
 
             if (prompt_handle_event(&e))
+                break;
+
+            if (canvas_handle_event(&e))
+                break;
+
+            if (camera_handle_event(&e))
                 break;
 
             if (e.type == SDL_KEYUP) {
@@ -102,11 +108,11 @@ int main(int argc, char **argv)
         SDL_RenderPresent(renderer);
     }
 
-    canvas_reset();
-
     tool->deselect();
 
+    canvas_destroy();
     prompt_destroy();
+    camera_destroy();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

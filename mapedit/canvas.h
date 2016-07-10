@@ -20,6 +20,9 @@ struct node {
     vertex_id v[3];
 };
 
+void canvas_init(const char *filename);
+void canvas_destroy(void);
+
 node_id canvas_add_node(vertex_id v[3]);
 void canvas_delete_node(node_id id);
 node_id canvas_find_node_at(const SDL_Point *p);
@@ -33,8 +36,8 @@ SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y);
 vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out);
 const struct vertex *canvas_vertex(vertex_id id);
 
+int canvas_handle_event(const SDL_Event *e);
 void canvas_render(SDL_Renderer *renderer);
-void canvas_reset(void);
 
 void canvas_save(const char *filename);
 void canvas_load(const char *filename);

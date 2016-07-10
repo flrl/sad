@@ -6,6 +6,7 @@
 
 #include <jansson.h>
 
+#include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -17,6 +18,43 @@ static size_t verts_count = 0;
 static struct node *nodes = NULL;
 static size_t nodes_alloc = 0;
 static size_t nodes_count = 0;
+
+static SDL_Texture *texture = NULL;
+static int is_dirty = 0;
+
+static void canvas_reset(void)
+{
+    if (nodes) free(nodes);
+    nodes = NULL;
+    nodes_count = nodes_alloc = 0;
+
+    if (verts) {
+        size_t i;
+        for (i = 0; i < verts_alloc; i++)
+            if (verts[i].nodes) free(verts[i].nodes);
+        free(verts);
+    }
+    verts = NULL;
+    verts_count = verts_alloc = 0;
+
+    if (texture) SDL_DestroyTexture(texture);
+    texture = NULL;
+
+    camera_centre.x = camera_centre.y = 0;
+    is_dirty = 0;
+}
+
+void canvas_init(const char *filename)
+{
+    canvas_reset();
+
+    if (filename) canvas_load(filename);
+}
+
+void canvas_destroy(void)
+{
+    canvas_reset();
+}
 
 static void verts_ensure(size_t n)
 {
@@ -110,7 +148,8 @@ vertex_id canvas_add_vertex(const SDL_Point *p)
     verts_ensure(1);
     vertex_id id = verts_count++;
     verts[id].id = id;
-    memcpy(&verts[id].p, p, sizeof *p);
+    verts[id].p = *p;
+    is_dirty = 1;
     return id;
 }
 
@@ -119,6 +158,7 @@ void canvas_del_vertex(vertex_id id)
     assert(id < verts_count);
 
     verts[id].id = ID_NONE;
+    is_dirty = 1;
 }
 
 void canvas_set_vertex(vertex_id id, const SDL_Point *p)
@@ -126,6 +166,7 @@ void canvas_set_vertex(vertex_id id, const SDL_Point *p)
     assert(id < verts_count);
 
     verts[id].p = *p;
+    is_dirty = 1;
 }
 
 void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
@@ -133,6 +174,7 @@ void canvas_offset_vertex(vertex_id id, const SDL_Point *p)
     assert(id < verts_count);
     verts[id].p.x += p->x;
     verts[id].p.y += p->y;
+    is_dirty = 1;
 }
 
 SDL_Point canvas_get_vertex(vertex_id id, int *x, int *y)
@@ -229,6 +271,7 @@ node_id canvas_add_node(vertex_id v[3])
         vertex_add_nodeid(&verts[v[i]], id);
     }
 
+    is_dirty = 1;
     return id;
 }
 
@@ -244,19 +287,12 @@ void canvas_delete_node(node_id id)
         if (verts[nodes[id].v[i]].nodes_count == 0)
             canvas_del_vertex(nodes[id].v[i]);
     }
+    is_dirty = 1;
 }
 
 static int cross(SDL_Point a, SDL_Point b)
 {
     return a.x * b.y - a.y * b.x;
-}
-
-static SDL_Point subtract(const SDL_Point *a, const SDL_Point *b)
-{
-    SDL_Point tmp;
-    tmp.x = a->x - b->x;
-    tmp.y = a->y - b->y;
-    return tmp;
 }
 
 static int same_side(const SDL_Point *p1, const SDL_Point *p2,
@@ -302,41 +338,58 @@ const struct node *canvas_node(node_id id)
     return &nodes[id];
 }
 
-void canvas_render(SDL_Renderer *renderer)
+int canvas_handle_event(const SDL_Event *e)
 {
-    node_id i;
-
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-
-    for (i = 0; i < nodes_count; i++) {
-        const struct node *n = &nodes[i];
-        if (n->id == ID_NONE) continue;
-
-        SDL_Point points[4] = {
-            verts[n->v[0]].p,
-            verts[n->v[1]].p,
-            verts[n->v[2]].p,
-            verts[n->v[0]].p,
-        };
-
-        SDL_RenderDrawLines(renderer, points, 4);
-    }
+    is_dirty = 1;
+    return 0;
 }
 
-void canvas_reset(void)
+void canvas_render(SDL_Renderer *renderer)
 {
-    if (nodes) free(nodes);
-    nodes = NULL;
-    nodes_count = nodes_alloc = 0;
+    if (is_dirty || !texture) {
+        SDL_Rect viewport;
+        node_id i;
 
-    if (verts) {
-        size_t i;
-        for (i = 0; i < verts_alloc; i++)
-            if (verts[i].nodes) free(verts[i].nodes);
-        free(verts);
+        SDL_RenderGetViewport(renderer, &viewport);
+
+        if (texture) SDL_DestroyTexture(texture);
+
+        texture = SDL_CreateTexture(renderer,
+                                    SDL_PIXELFORMAT_RGBA8888,
+                                    SDL_TEXTUREACCESS_TARGET,
+                                    viewport.w, viewport.h);
+
+        SDL_SetRenderTarget(renderer, texture);
+
+        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 80);
+        SDL_RenderClear(renderer);
+
+        SDL_Rect tmprect = { 0, 0, viewport.w, viewport.h };
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        SDL_RenderDrawRect(renderer, &tmprect);
+
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+
+        for (i = 0; i < nodes_count; i++) {
+            const struct node *n = &nodes[i];
+            if (n->id == ID_NONE) continue;
+
+            SDL_Point points[4] = {
+                subtract(&verts[n->v[0]].p, &camera_offset),
+                subtract(&verts[n->v[1]].p, &camera_offset),
+                subtract(&verts[n->v[2]].p, &camera_offset),
+                subtract(&verts[n->v[0]].p, &camera_offset),
+            };
+
+            SDL_RenderDrawLines(renderer, points, 4);
+        }
+
+        SDL_SetRenderTarget(renderer, NULL);
+        is_dirty = 0;
     }
-    verts = NULL;
-    verts_count = verts_alloc = 0;
+
+    if (texture)
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
 }
 
 void canvas_save(const char *filename)
@@ -425,6 +478,8 @@ void canvas_load(const char *filename)
     const size_t flags = JSON_REJECT_DUPLICATES;
 
     canvas_reset();
+
+    if (!filename) return;
 
     if (stat(filename, &stat_buf) < 0) {
         fprintf(stderr, "unable to read %s: %s\n", filename, strerror(errno));
