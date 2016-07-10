@@ -37,9 +37,9 @@ static void nodedraw_next_point(SDL_Point p)
         case 3:
         default:
             for (i = 0; i < 3; i++) {
-                vid[i] = canvas_find_vertex_near(&state->points[i], 0, NULL);
+                vid[i] = canvas_find_vertex_near(state->points[i], 0, NULL);
                 if (vid[i] == ID_NONE)
-                    vid[i] = canvas_add_vertex(&state->points[i]);
+                    vid[i] = canvas_add_vertex(state->points[i]);
             }
             canvas_add_node(vid);
             nodedraw_reset();
@@ -131,13 +131,13 @@ static int nodedraw_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points >= 3) break;
-            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             nodedraw_edit_point(&mouse, NULL);
             nodedraw_next_point(mouse);
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0 || state->n_points > 3) break;
-            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             nodedraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
@@ -145,7 +145,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
                 nodedraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0 || state->n_points > 3) break;
-            canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             nodedraw_next_point(mouse);
             break;
     }
@@ -243,7 +243,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            vid = canvas_find_vertex_near(&mouse, TOOL_SNAP2, &mouse);
+            vid = canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             if (vid == ID_NONE) break;
             state->selected = vid;
             state->orig_point = canvas_vertex(vid)->p;
@@ -294,7 +294,7 @@ static void nodedel_select(void)
     mouse = addp(mouse, camera_offset);
 
     memset(state, 0, sizeof *state);
-    state->over = canvas_find_node_at(&mouse);
+    state->over = canvas_find_node_at(mouse);
 }
 
 static void nodedel_deselect(void)
@@ -315,7 +315,7 @@ static int nodedel_handle_event(const SDL_Event *e)
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
-            state->over = canvas_find_node_at(&mouse);
+            state->over = canvas_find_node_at(mouse);
             break;
         case SDL_MOUSEBUTTONUP:
             if (e->button.button != SDL_BUTTON_LEFT) break;

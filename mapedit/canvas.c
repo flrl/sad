@@ -148,12 +148,12 @@ static void vertex_nodes_ensure(struct vertex *vertex, size_t n)
     }
 }
 
-vertex_id canvas_add_vertex(const SDL_Point *p)
+vertex_id canvas_add_vertex(SDL_Point p)
 {
     verts_ensure(1);
     vertex_id id = verts_count++;
     verts[id].id = id;
-    verts[id].p = *p;
+    verts[id].p = p;
     canvas_dirty();
     return id;
 }
@@ -172,15 +172,16 @@ void canvas_edit_vertex(vertex_id id, const SDL_Point *p_abs, const SDL_Point *p
 
     if (p_abs) {
         verts[id].p = *p_abs;
+        canvas_dirty();
     }
     else if (p_rel) {
         verts[id].p.x += p_rel->x;
         verts[id].p.y += p_rel->y;
+        canvas_dirty();
     }
-    canvas_dirty();
 }
 
-vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out)
+vertex_id canvas_find_vertex_near(SDL_Point p, int snap2, SDL_Point *out)
 {
     vertex_id id;
 
@@ -189,12 +190,12 @@ vertex_id canvas_find_vertex_near(const SDL_Point *p, int snap2, SDL_Point *out)
     for (id = 0; id < verts_count; id++) {
         const struct vertex *v = &verts[id];
         if (v->id == ID_NONE) continue;
-        if (p->x == v->p.x && p->y == v->p.y) {
+        if (p.x == v->p.x && p.y == v->p.y) {
             goto found;
         }
         else {
-            int dx = p->x - v->p.x;
-            int dy = p->y - v->p.y;
+            int dx = p.x - v->p.x;
+            int dy = p.y - v->p.y;
             int d2 = dx * dx + dy * dy;
             if (d2 <= snap2)
                 goto found;
@@ -284,7 +285,7 @@ void canvas_delete_node(node_id id)
     canvas_dirty();
 }
 
-node_id canvas_find_node_at(const SDL_Point *p)
+node_id canvas_find_node_at(SDL_Point p)
 {
     node_id id;
 
@@ -292,13 +293,13 @@ node_id canvas_find_node_at(const SDL_Point *p)
         struct node *node = &nodes[id];
         if (node->id == ID_NONE) continue;
 
-        if (!same_sidep(*p, verts[node->v[2]].p, verts[node->v[0]].p, verts[node->v[1]].p))
+        if (!same_sidep(p, verts[node->v[2]].p, verts[node->v[0]].p, verts[node->v[1]].p))
             continue;
 
-        if (!same_sidep(*p, verts[node->v[0]].p, verts[node->v[1]].p, verts[node->v[2]].p))
+        if (!same_sidep(p, verts[node->v[0]].p, verts[node->v[1]].p, verts[node->v[2]].p))
             continue;
 
-        if (!same_sidep(*p, verts[node->v[1]].p, verts[node->v[2]].p, verts[node->v[0]].p))
+        if (!same_sidep(p, verts[node->v[1]].p, verts[node->v[2]].p, verts[node->v[0]].p))
             continue;
 
         return id;
