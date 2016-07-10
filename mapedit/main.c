@@ -8,7 +8,7 @@
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 
-const char *filename = NULL;
+char *filename = NULL;
 
 static void filename_ok(const char *text, void *context);
 
@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     int shutdown = 0;
 
     if (argc > 1) {
-        filename = argv[1];
+        filename = strdup(argv[1]);
         canvas_load(filename);
     }
 
@@ -68,14 +68,14 @@ int main(int argc, char **argv)
                         SDL_SetWindowTitle(window, tool->desc);
                         break;
                     case SDLK_s:
-                        if ((e.key.keysym.mod & KMOD_SHIFT)) {
+                        if (!filename || (e.key.keysym.mod & KMOD_SHIFT)) {
                             prompt_start("filename? ", prompt_rect,
                                          &filename_ok, NULL,
                                          NULL);
-                            break;
                         }
-                        if (!filename) break;
-                        canvas_save(filename);
+                        else {
+                            canvas_save(filename);
+                        }
                         break;
                     case SDLK_v:
                         tool->deselect();
@@ -113,10 +113,14 @@ int main(int argc, char **argv)
     SDL_DestroyWindow(window);
 
     SDL_Quit();
+
+    if (filename) free(filename);
     return 0;
 }
 
 static void filename_ok(const char *text, void *context __attribute__((unused)))
 {
-    canvas_save(text);
+    if (filename) free(filename);
+    filename = strdup(text);
+    canvas_save(filename);
 }
