@@ -41,7 +41,7 @@ void prompt_init(void)
     memset(&prompt_state, 0, sizeof prompt_state);
 
     if (!prompt_font)
-        prompt_font = TTF_OpenFont("data/Vera.ttf", 16);
+        prompt_font = TTF_OpenFont("data/Vera.ttf", 14);
 }
 
 void prompt_destroy(void)
@@ -176,10 +176,10 @@ void prompt_render(SDL_Renderer *renderer)
 
             SDL_RenderGetViewport(renderer, &viewport);
 
-            /* crop to window size, allowing 2 pixels for cursor */
-            if (surface->w + 2 > viewport.w) {
-                state->srcrect.x = surface->w + 2 - viewport.w;
-                state->srcrect.w = viewport.w - 2;
+            /* crop to window size, allowing 2 pixels padding each end */
+            if (surface->w + 4 > viewport.w) {
+                state->srcrect.x = surface->w + 4 - viewport.w;
+                state->srcrect.w = viewport.w - 4;
             }
             else {
                 state->srcrect.x = 0;
@@ -188,8 +188,8 @@ void prompt_render(SDL_Renderer *renderer)
             state->srcrect.y = 0;
             state->srcrect.h = surface->h;
 
-            state->dstrect.x = 0;
-            state->dstrect.y = viewport.h - surface->h;
+            state->dstrect.x = 2;
+            state->dstrect.y = viewport.h - surface->h - 2;
             state->dstrect.w = state->srcrect.w;
             state->dstrect.h = state->srcrect.h;
 
