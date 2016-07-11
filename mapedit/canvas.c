@@ -251,15 +251,23 @@ static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid)
 node_id canvas_add_node(vertex_id v[3])
 {
     size_t i;
+    int winding;
 
     if (v[0] == v[1] || v[1] == v[2] || v[2] == v[0])
         return ID_NONE;
 
     nodes_ensure(1);
-
     node_id id = nodes_count++;
-
     nodes[id].id = id;
+
+    winding = crossp(subtractp(verts[v[1]].p, verts[v[0]].p),
+                     subtractp(verts[v[2]].p, verts[v[0]].p));
+    if (winding < 0) {
+        vertex_id tmp = v[1];
+        v[1] = v[2];
+        v[2] = tmp;
+    }
+
     for (i = 0; i < 3; i++) {
         assert(verts[v[i]].id == v[i]);
         nodes[id].v[i] = v[i];
