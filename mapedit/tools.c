@@ -1,12 +1,15 @@
 #include <assert.h>
 #include <math.h>
 
+#include <SDL2_gfxPrimitives.h>
+
 #include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/geometry.h"
 #include "mapedit/tools.h"
 
-static const int TOOL_SNAP2 = (5*5);
+static const int TOOL_SNAP = 5;
+static const int TOOL_SNAP2 = (TOOL_SNAP * TOOL_SNAP);
 
 /*** nodedraw ***/
 static struct nodedraw_state {
@@ -191,8 +194,22 @@ static void nodedraw_render(SDL_Renderer *renderer)
 
 static struct vertmove_state {
     vertex_id selected;
+    vertex_id hovered;
     SDL_Point orig_point;
 } vertmove_state;
+
+static void vertmove_select(void)
+{
+    struct vertmove_state *state = &vertmove_state;
+    SDL_Point mouse;
+
+    SDL_GetMouseState(&mouse.x, &mouse.y);
+    mouse = addp(mouse, camera_offset);
+
+    memset(state, 0, sizeof *state);
+    state->selected = ID_NONE;
+    state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+}
 
 static void vertmove_reset(void)
 {
@@ -200,6 +217,7 @@ static void vertmove_reset(void)
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
+    state->hovered = ID_NONE;
 }
 
 static int vertmove_handle_event(const SDL_Event *e)
@@ -207,7 +225,6 @@ static int vertmove_handle_event(const SDL_Event *e)
     struct vertmove_state *state = &vertmove_state;
     SDL_Point mouse;
     SDL_Point arrows;
-    vertex_id vid;
 
     SDL_Keymod keymod;
 
@@ -223,10 +240,12 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (state->selected == ID_NONE) break;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
                 canvas_edit_vertex(state->selected, &state->orig_point, NULL);
+                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
                 state->selected = ID_NONE;
                 break;
             }
             if (e->key.keysym.sym == SDLK_RETURN) {
+                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
                 state->selected = ID_NONE;
                 break;
             }
@@ -243,19 +262,22 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            vid = canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
-            if (vid == ID_NONE) break;
-            state->selected = vid;
-            state->orig_point = canvas_vertex(vid)->p;
+            if (state->hovered == ID_NONE) break;
+            state->selected = state->hovered;
+            state->hovered = ID_NONE;
+            state->orig_point = canvas_vertex(state->selected)->p;
             break;
         case SDL_MOUSEMOTION:
-            if (state->selected == ID_NONE) break;
-            canvas_edit_vertex(state->selected, &mouse, NULL);
+            if (state->selected == ID_NONE)
+                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+            else
+                canvas_edit_vertex(state->selected, &mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->selected == ID_NONE) break;
             if (e->button.button != SDL_BUTTON_LEFT) break;
             canvas_edit_vertex(state->selected, &mouse, NULL);
+            state->hovered = state->selected;
             state->selected = ID_NONE;
             break;
     }
@@ -268,15 +290,22 @@ static void vertmove_render(SDL_Renderer *renderer)
     struct vertmove_state *state = &vertmove_state;
     SDL_Point a, b;
 
-    if (state->selected == ID_NONE) return;
+    if (state->selected != ID_NONE) {
+        const struct vertex *vertex = canvas_vertex(state->selected);
 
-    const struct vertex *vertex = canvas_vertex(state->selected);
+        a = subtractp(state->orig_point, camera_offset);
+        b = subtractp(vertex->p, camera_offset);
 
-    a = subtractp(state->orig_point, camera_offset);
-    b = subtractp(vertex->p, camera_offset);
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
+    }
+    else if (state->hovered != ID_NONE) {
+        const struct vertex *vertex = canvas_vertex(state->hovered);
+        SDL_Point p = subtractp(vertex->p, camera_offset);
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
+        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
+                         120, 120, 120, 255);
+    }
 }
 
 /*** nodedel ***/
@@ -348,6 +377,6 @@ static void nodedel_render(SDL_Renderer *renderer)
 
 struct tool tools[] = {
     { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render, "draw nodes" },
-    { &vertmove_reset, &vertmove_reset, &vertmove_handle_event, &vertmove_render, "move vertices" },
+    { &vertmove_select, &vertmove_reset, &vertmove_handle_event, &vertmove_render, "move vertices" },
     { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render, "delete nodes" },
 };
