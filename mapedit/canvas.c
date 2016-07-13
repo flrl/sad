@@ -4,6 +4,7 @@
 
 #include <sys/stat.h>
 
+#include <SDL2_gfxPrimitives.h>
 #include <jansson.h>
 
 #include "mapedit/camera.h"
@@ -352,27 +353,29 @@ void canvas_render(SDL_Renderer *renderer)
 
         SDL_SetRenderTarget(renderer, texture);
 
-        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 80);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
-        SDL_Rect tmprect = { 0, 0, viewport.w, viewport.h };
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-        SDL_RenderDrawRect(renderer, &tmprect);
-
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
         for (i = 0; i < nodes_count; i++) {
             const struct node *n = &nodes[i];
             if (n->id == ID_NONE) continue;
 
-            SDL_Point points[4] = {
+            SDL_Point points[3] = {
                 subtractp(verts[n->v[0]].p, camera_offset),
                 subtractp(verts[n->v[1]].p, camera_offset),
                 subtractp(verts[n->v[2]].p, camera_offset),
-                subtractp(verts[n->v[0]].p, camera_offset),
             };
 
-            SDL_RenderDrawLines(renderer, points, 4);
+            filledTrigonRGBA(renderer,
+                             points[0].x, points[0].y,
+                             points[1].x, points[1].y,
+                             points[2].x, points[2].y,
+                             80, 80, 80, 255);
+            trigonRGBA(renderer,
+                       points[0].x, points[0].y,
+                       points[1].x, points[1].y,
+                       points[2].x, points[2].y,
+                       120, 120, 120, 255);
         }
 
         SDL_SetRenderTarget(renderer, NULL);
