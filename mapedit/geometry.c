@@ -30,6 +30,13 @@ int same_sidep(SDL_Point p1, SDL_Point p2, SDL_Point a, SDL_Point b)
     return 0;
 }
 
+float flengthp(SDL_Point a, SDL_Point b)
+{
+    int dx = b.x - a.x;
+    int dy = b.y - a.y;
+    return sqrtf(dx * dx + dy * dy);
+}
+
 float dotf(const float a[2], const float b[2])
 {
     return a[0] * b[0] + a[1] * b[1];

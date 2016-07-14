@@ -100,6 +100,11 @@ static void handle_events(void)
             continue;
 
         switch (e.key.keysym.sym) {
+            case SDLK_a:
+                tool->deselect();
+                tool = &tools[TOOL_ARCDRAW];
+                tool->select();
+                break;
             case SDLK_d:
                 tool->deselect();
                 tool = &tools[TOOL_NODEDEL];

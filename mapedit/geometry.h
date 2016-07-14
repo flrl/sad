@@ -12,5 +12,7 @@ int crossp(SDL_Point a, SDL_Point b);
 
 int same_sidep(SDL_Point p1, SDL_Point p2, SDL_Point a, SDL_Point b);
 
+float flengthp(SDL_Point a, SDL_Point b);
+
 float dotf(const float a[2], const float b[2]);
 #endif
