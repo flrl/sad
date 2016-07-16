@@ -16,6 +16,7 @@ tools_mapedit_SOURCES = \
     mapedit/geometry.c  \
     mapedit/main.c      \
     mapedit/prompt.c    \
+    mapedit/selection.c \
     mapedit/tools.c     \
     mapedit/util.c
 

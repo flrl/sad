@@ -6,6 +6,7 @@
 typedef unsigned node_id;
 typedef unsigned vertex_id;
 #define ID_NONE ((unsigned)(-1))
+#define ID_MAX  ((unsigned)(0xFFFE))
 
 struct vertex {
     vertex_id id;
