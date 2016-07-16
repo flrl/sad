@@ -132,6 +132,7 @@ static void handle_events(void)
 
 static void filename_ok(const char *text, void *context __attribute__((unused)))
 {
+    if (text == NULL || text[0] == '\0') return;
     if (filename) free(filename);
     filename = strdup(text);
     canvas_save(filename);
