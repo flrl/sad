@@ -26,28 +26,34 @@ static void nodedraw_reset(void)
     memset(state, 0, sizeof *state);
 }
 
+static void nodedraw_start(SDL_Point p)
+{
+    struct nodedraw_state *state = &nodedraw_state;
+
+    assert(state->n_points == 0);
+
+    state->points[state->n_points++] = p;
+}
+
 static void nodedraw_next_point(SDL_Point p)
 {
     struct nodedraw_state *state = &nodedraw_state;
     vertex_id vid[3];
     size_t i;
 
-    switch (state->n_points) {
-        case 0:
-            state->points[state->n_points++] = p;
-        case 1:
-        case 2:
-            state->points[state->n_points++] = p;
-            return;
-        case 3:
-        default:
-            for (i = 0; i < 3; i++) {
-                vid[i] = canvas_find_vertex_near(state->points[i], 0, NULL);
-                if (vid[i] == ID_NONE)
-                    vid[i] = canvas_add_vertex(state->points[i]);
-            }
-            canvas_add_node(vid);
-            nodedraw_reset();
+    assert(state->n_points > 0);
+
+    if (state->n_points >= 3) {
+        for (i = 0; i < 3; i++) {
+            vid[i] = canvas_find_vertex_near(state->points[i], 0, NULL);
+            if (vid[i] == ID_NONE)
+                vid[i] = canvas_add_vertex(state->points[i]);
+        }
+        canvas_add_node(vid);
+        nodedraw_reset();
+    }
+    else {
+        state->points[state->n_points++] = p;
     }
 }
 
@@ -55,7 +61,9 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
 {
     struct nodedraw_state *state = &nodedraw_state;
 
-    if (state->n_points == 0 || state->n_points > 3)
+    assert(state->n_points > 0);
+
+    if (state->n_points > 3)
         return;
 
     if (p_abs) {
@@ -117,14 +125,14 @@ static int nodedraw_handle_event(const SDL_Event *e)
 
     switch (e->type) {
         case SDL_KEYUP:
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             if (e->key.keysym.sym == SDLK_ESCAPE)
                 nodedraw_reset();
             else if (e->key.keysym.sym == SDLK_RETURN)
                 nodedraw_next_point(mouse);
             break;
         case SDL_KEYDOWN:
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -135,13 +143,12 @@ static int nodedraw_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            if (state->n_points >= 3) break;
+            if (state->n_points > 0) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
-            nodedraw_edit_point(&mouse, NULL);
-            nodedraw_next_point(mouse);
+            nodedraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             nodedraw_edit_point(&mouse, NULL);
             break;
@@ -149,7 +156,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
             if (e->button.button == SDL_BUTTON_RIGHT)
                 nodedraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             nodedraw_next_point(mouse);
             break;
@@ -444,22 +451,27 @@ static void arcdraw_sectors_cancel(void *ctx __attribute__((unused)))
     arcdraw_reset();
 }
 
+static void arcdraw_start(SDL_Point p)
+{
+    struct arcdraw_state *state = &arcdraw_state;
+
+    assert(state->n_points == 0);
+
+    state->points[state->n_points++] = p;
+}
+
 static void arcdraw_next_point(SDL_Point p)
 {
     struct arcdraw_state *state = &arcdraw_state;
 
-    switch (state->n_points) {
-        case 0:
-            state->points[state->n_points++] = p;
-        case 1:
-        case 2:
-            state->points[state->n_points++] = p;
-            return;
-        case 3:
-        default:
-            state->in_prompt = 1;
-            prompt("sectors: ", NULL, arcdraw_sectors_ok, arcdraw_sectors_cancel, NULL);
-            break;
+    assert(state->n_points > 0);
+
+    if (state->n_points >= 3) {
+        state->in_prompt = 1;
+        prompt("sectors: ", NULL, arcdraw_sectors_ok, arcdraw_sectors_cancel, NULL);
+    }
+    else {
+        state->points[state->n_points++] = p;
     }
 }
 
@@ -467,7 +479,9 @@ static void arcdraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
 {
     struct arcdraw_state *state = &arcdraw_state;
 
-    if (state->n_points == 0 || state->n_points > 3)
+    assert(state->n_points > 0);
+
+    if (state->n_points > 3)
         return;
 
     if (p_abs) {
@@ -489,14 +503,14 @@ static int arcdraw_handle_event(const SDL_Event *e)
 
     switch (e->type) {
         case SDL_KEYUP:
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             if (e->key.keysym.sym == SDLK_ESCAPE)
                 arcdraw_reset();
             else if (e->key.keysym.sym == SDLK_RETURN)
                 arcdraw_next_point(mouse);
             break;
         case SDL_KEYDOWN:
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -507,14 +521,13 @@ static int arcdraw_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            if (state->n_points >= 3) break;
+            if (state->n_points > 0) break;
             if (state->in_prompt) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
-            arcdraw_edit_point(&mouse, NULL);
-            arcdraw_next_point(mouse);
+            arcdraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
-            if (state->n_points == 0 || state->n_points > 3)  break;
+            if (state->n_points == 0)  break;
             if (state->in_prompt) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             arcdraw_edit_point(&mouse, NULL);
@@ -524,7 +537,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
             if (e->button.button == SDL_BUTTON_RIGHT)
                 arcdraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            if (state->n_points == 0 || state->n_points > 3) break;
+            if (state->n_points == 0) break;
             canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
             arcdraw_next_point(mouse);
             break;
