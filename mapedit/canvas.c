@@ -261,8 +261,8 @@ node_id canvas_add_node(vertex_id v[3])
     node_id id = nodes_count++;
     nodes[id].id = id;
 
-    winding = crossp(subtractp(verts[v[1]].p, verts[v[0]].p),
-                     subtractp(verts[v[2]].p, verts[v[0]].p));
+    winding = crossp(psubtractp(verts[v[1]].p, verts[v[0]].p),
+                     psubtractp(verts[v[2]].p, verts[v[0]].p));
     if (winding < 0) {
         vertex_id tmp = v[1];
         v[1] = v[2];

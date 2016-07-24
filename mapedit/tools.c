@@ -79,7 +79,7 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
 
 static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
 {
-    const static float directions[8][2] = {
+    const static fvector directions[8] = {
         {        1.0f,  0.0f       },   // east
         {  INV_SQRT2f,  INV_SQRT2f },   // northeast
         {        0.0f,  1.0f       },   // north
@@ -90,8 +90,8 @@ static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
         {  INV_SQRT2f, -INV_SQRT2f },   // southeast
     };
     const static size_t n_directions = 8;
-    const float vab[2] = { a.x - b.x, a.y - b.y };
-    const float vab_len = sqrtf(vab[0] * vab[0] + vab[1] * vab[1]);
+    fvector vab = { a.x - b.x, a.y - b.y };
+    const float vab_len = lengthfv(vab);
     size_t best_direction = 0;
     float best_result = 0.0f;
     size_t i;
@@ -99,15 +99,15 @@ static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
     assert(out != NULL);
 
     for (i = 0; i < n_directions; i++) {
-        float quality = dotf(directions[i], vab);
+        float quality = dotfv(directions[i], vab);
         if (quality < best_result) {
             best_result = quality;
             best_direction = i;
         }
     }
 
-    out->x = a.x + lroundf(vab_len * directions[best_direction][0]);
-    out->y = a.y + lround(vab_len * directions[best_direction][1]);
+    out->x = a.x + lroundf(vab_len * directions[best_direction].x);
+    out->y = a.y + lround(vab_len * directions[best_direction].y);
 }
 
 static int nodedraw_handle_event(const SDL_Event *e)
@@ -418,9 +418,9 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
         return;
     }
 
-    r = flengthp(state->points[0], state->points[1]);
-    ab = subtractp(state->points[1], state->points[0]);
-    ac = subtractp(state->points[2], state->points[0]);
+    r = lengthp(state->points[0], state->points[1]);
+    ab = psubtractp(state->points[1], state->points[0]);
+    ac = psubtractp(state->points[2], state->points[0]);
     tab = atan2(ab.y, ab.x);
     tac = atan2(ac.y, ac.x);
     t = (tac - tab);
@@ -570,8 +570,8 @@ static void arcdraw_render(SDL_Renderer *renderer)
                            points[1].x, points[1].y);
     }
     else if (state->n_points == 3) {
-        ab = subtractp(points[1], points[0]);
-        ac = subtractp(points[2], points[0]);
+        ab = psubtractp(points[1], points[0]);
+        ac = psubtractp(points[2], points[0]);
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
         SDL_RenderDrawLine(renderer,
@@ -584,7 +584,7 @@ static void arcdraw_render(SDL_Renderer *renderer)
         arcRGBA(renderer,
                 points[0].x,
                 points[0].y,
-                flengthp(points[0], points[1]),
+                lengthp(points[0], points[1]),
                 atan2(ab.y, ab.x) * 180 / M_PI,
                 atan2(ac.y, ac.x) * 180 / M_PI,
                 255, 0, 0, 255);

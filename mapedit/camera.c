@@ -30,12 +30,12 @@ void camera_destroy(void)
 
 SDL_Point to_screen(SDL_Point p)
 {
-    return subtractp(p, camera_offset);
+    return psubtractp(p, camera_offset);
 }
 
 SDL_Point from_screen(SDL_Point p)
 {
-    return addp(p, camera_offset);
+    return paddp(p, camera_offset);
 }
 
 static void camera_move(int x, int y, unsigned flipped)
