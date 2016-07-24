@@ -10,8 +10,8 @@
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 
-static const float TOOL_SNAP = 5;
-static const float TOOL_SNAP2 = (TOOL_SNAP * TOOL_SNAP);
+#define TOOL_SNAP (5 / camera_unitpx)
+#define TOOL_SNAP2 (TOOL_SNAP * TOOL_SNAP)
 
 /*** nodedraw ***/
 static struct nodedraw_state {
@@ -316,7 +316,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         const struct vertex *vertex = canvas_vertex(state->hovered);
         SDL_Point p = to_screen(vertex->p);
 
-        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
+        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP * camera_unitpx,
                          120, 120, 120, 255);
     }
 }

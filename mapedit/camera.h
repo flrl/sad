@@ -5,8 +5,8 @@
 
 #include "mapedit/geometry.h"
 
-extern SDL_Point camera_offset;
-extern SDL_Point camera_centre;
+extern fpoint camera_centre;
+extern const float camera_unitpx;
 
 void camera_init(SDL_Renderer *renderer);
 void camera_destroy(void);

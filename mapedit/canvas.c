@@ -440,6 +440,7 @@ void canvas_save(const char *filename)
     jcanvas = json_object();
     assert(jcanvas != NULL);
 
+    json_object_set_new(jcanvas, "scale", json_real(camera_unitpx));
     json_object_set_new(jcanvas, "vertices", jverts);
     json_object_set_new(jcanvas, "nodes", jnodes);
 
@@ -462,9 +463,11 @@ void canvas_load(const char *filename)
     json_t *jcanvas = NULL;
     json_t *jverts = NULL;
     json_t *jnodes = NULL;
+    json_t *jscale = NULL;
     json_error_t error;
     struct stat stat_buf;
     const size_t flags = JSON_REJECT_DUPLICATES;
+    float scale;
 
     canvas_reset();
 
@@ -479,6 +482,14 @@ void canvas_load(const char *filename)
     if (!jcanvas) {
         // FIXME print the error out?
         return;
+    }
+
+    jscale = json_object_get(jcanvas, "scale");
+    if (jscale) {
+        scale = json_number_value(jscale) / camera_unitpx;
+    }
+    else {
+        scale = 1 / camera_unitpx;
     }
 
     jverts = json_object_get(jcanvas, "vertices");
@@ -534,8 +545,8 @@ void canvas_load(const char *filename)
                         "p", &x, &y,
                         "nodes", &jnode_ids);
 
-            verts[vid].p.x = x;
-            verts[vid].p.y = y;
+            verts[vid].p.x = x * scale;
+            verts[vid].p.y = y * scale;
 
             size_t i;
             json_t *jnode_id;
