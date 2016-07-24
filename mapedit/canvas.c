@@ -361,9 +361,9 @@ void canvas_render(SDL_Renderer *renderer)
             if (n->id == ID_NONE) continue;
 
             SDL_Point points[3] = {
-                subtractp(verts[n->v[0]].p, camera_offset),
-                subtractp(verts[n->v[1]].p, camera_offset),
-                subtractp(verts[n->v[2]].p, camera_offset),
+                to_screen(verts[n->v[0]].p),
+                to_screen(verts[n->v[1]].p),
+                to_screen(verts[n->v[2]].p),
             };
 
             filledTrigonRGBA(renderer,

@@ -70,8 +70,10 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        state->points[state->n_points - 1].x += p_rel->x;
-        state->points[state->n_points - 1].y += p_rel->y;
+        SDL_Point p = to_screen(state->points[state->n_points -1]);
+        p.x += p_rel->x;
+        p.y += p_rel->y;
+        state->points[state->n_points - 1] = from_screen(p);
     }
 }
 
@@ -116,7 +118,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
     SDL_Keymod keymod;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->n_points > 1)
@@ -174,14 +176,14 @@ static void nodedraw_render(SDL_Renderer *renderer)
     if (!state->n_points) return;
 
     for (n = 0; n < state->n_points; n++) {
-        points[n] = subtractp(state->points[n], camera_offset);
+        points[n] = to_screen(state->points[n]);
     }
 
     switch (state->n_points) {
         case 1:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             /* complete the "line" */
-            points[n++] = subtractp(state->points[0], camera_offset);
+            points[n++] = to_screen(state->points[0]);
             break;
         case 2:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -189,7 +191,7 @@ static void nodedraw_render(SDL_Renderer *renderer)
         case 3:
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
             /* close the triangle */
-            points[n++] = subtractp(state->points[0], camera_offset);
+            points[n++] = to_screen(state->points[0]);
             break;
 
         default:
@@ -213,7 +215,7 @@ static void vertmove_select(void)
     SDL_Point mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
@@ -238,7 +240,7 @@ static int vertmove_handle_event(const SDL_Event *e)
     SDL_Keymod keymod;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->selected != ID_NONE)
@@ -267,6 +269,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
             if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
             if (arrows.x == 0 && arrows.y == 0) break;
+            /* FIXME arrows is in screen space! */
             canvas_edit_vertex(state->selected, NULL, &arrows);
             break;
         case SDL_MOUSEBUTTONDOWN:
@@ -302,15 +305,15 @@ static void vertmove_render(SDL_Renderer *renderer)
     if (state->selected != ID_NONE) {
         const struct vertex *vertex = canvas_vertex(state->selected);
 
-        a = subtractp(state->orig_point, camera_offset);
-        b = subtractp(vertex->p, camera_offset);
+        a = to_screen(state->orig_point);
+        b = to_screen(vertex->p);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
     }
     else if (state->hovered != ID_NONE) {
         const struct vertex *vertex = canvas_vertex(state->hovered);
-        SDL_Point p = subtractp(vertex->p, camera_offset);
+        SDL_Point p = to_screen(vertex->p);
 
         filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
                          120, 120, 120, 255);
@@ -329,7 +332,7 @@ static void nodedel_select(void)
     SDL_Point mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     memset(state, 0, sizeof *state);
     state->over = canvas_find_node_at(mouse);
@@ -349,7 +352,7 @@ static int nodedel_handle_event(const SDL_Event *e)
     SDL_Point mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
@@ -374,10 +377,10 @@ static void nodedel_render(SDL_Renderer *renderer)
     const struct node *node = canvas_node(state->over);
 
     SDL_Point points[4] = {
-        subtractp(canvas_vertex(node->v[0])->p, camera_offset),
-        subtractp(canvas_vertex(node->v[1])->p, camera_offset),
-        subtractp(canvas_vertex(node->v[2])->p, camera_offset),
-        subtractp(canvas_vertex(node->v[0])->p, camera_offset),
+        to_screen(canvas_vertex(node->v[0])->p),
+        to_screen(canvas_vertex(node->v[1])->p),
+        to_screen(canvas_vertex(node->v[2])->p),
+        to_screen(canvas_vertex(node->v[0])->p),
     };
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -488,8 +491,10 @@ static void arcdraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        state->points[state->n_points - 1].x += p_rel->x;
-        state->points[state->n_points - 1].y += p_rel->y;
+        SDL_Point p = to_screen(state->points[state->n_points - 1]);
+        p.x += p_rel->x;
+        p.y += p_rel->y;
+        state->points[state->n_points - 1] = from_screen(p);
     }
 }
 
@@ -499,7 +504,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
     SDL_Point arrows, mouse;
 
     SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = addp(mouse, camera_offset);
+    mouse = from_screen(mouse);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -550,9 +555,9 @@ static void arcdraw_render(SDL_Renderer *renderer)
 {
     struct arcdraw_state *state = &arcdraw_state;
     SDL_Point points[3] = {
-        subtractp(state->points[0], camera_offset),
-        subtractp(state->points[1], camera_offset),
-        subtractp(state->points[2], camera_offset),
+        to_screen(state->points[0]),
+        to_screen(state->points[1]),
+        to_screen(state->points[2]),
     };
     SDL_Point ab, ac;
 

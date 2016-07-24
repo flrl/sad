@@ -1,6 +1,7 @@
 #include <SDL.h>
 
 #include "mapedit/camera.h"
+#include "mapedit/geometry.h"
 
 SDL_Point camera_offset = { 0, 0 };
 SDL_Point camera_centre = { 0, 0 };
@@ -25,6 +26,16 @@ void camera_destroy(void)
     camera_offset.x = camera_offset.y = 0;
     camera_centre.x = camera_centre.y = 0;
     camera_renderer = NULL;
+}
+
+SDL_Point to_screen(SDL_Point p)
+{
+    return subtractp(p, camera_offset);
+}
+
+SDL_Point from_screen(SDL_Point p)
+{
+    return addp(p, camera_offset);
 }
 
 static void camera_move(int x, int y, unsigned flipped)
