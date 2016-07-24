@@ -28,14 +28,20 @@ void camera_destroy(void)
     camera_renderer = NULL;
 }
 
-SDL_Point to_screen(SDL_Point p)
+SDL_Point to_screen(fpoint p)
 {
-    return psubtractp(p, camera_offset);
+    SDL_Point screen;
+    screen.x = lroundf(p.x) - camera_offset.x;
+    screen.y = lroundf(p.y) - camera_offset.y;
+    return screen;
 }
 
-SDL_Point from_screen(SDL_Point p)
+fpoint from_screen(SDL_Point screen)
 {
-    return paddp(p, camera_offset);
+    fpoint p;
+    p.x = screen.x + camera_offset.x;
+    p.y = screen.y + camera_offset.y;
+    return p;
 }
 
 static void camera_move(int x, int y, unsigned flipped)

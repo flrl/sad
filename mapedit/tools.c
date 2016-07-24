@@ -10,12 +10,12 @@
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 
-static const int TOOL_SNAP = 5;
-static const int TOOL_SNAP2 = (TOOL_SNAP * TOOL_SNAP);
+static const float TOOL_SNAP = 5;
+static const float TOOL_SNAP2 = (TOOL_SNAP * TOOL_SNAP);
 
 /*** nodedraw ***/
 static struct nodedraw_state {
-    SDL_Point points[3];
+    fpoint points[3];
     unsigned n_points;
 } nodedraw_state;
 
@@ -26,7 +26,7 @@ static void nodedraw_reset(void)
     memset(state, 0, sizeof *state);
 }
 
-static void nodedraw_start(SDL_Point p)
+static void nodedraw_start(fpoint p)
 {
     struct nodedraw_state *state = &nodedraw_state;
 
@@ -35,7 +35,7 @@ static void nodedraw_start(SDL_Point p)
     state->points[state->n_points++] = p;
 }
 
-static void nodedraw_next_point(SDL_Point p)
+static void nodedraw_next_point(fpoint p)
 {
     struct nodedraw_state *state = &nodedraw_state;
     vertex_id vid[3];
@@ -57,7 +57,7 @@ static void nodedraw_next_point(SDL_Point p)
     }
 }
 
-static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
+static void nodedraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
 {
     struct nodedraw_state *state = &nodedraw_state;
 
@@ -77,7 +77,7 @@ static void nodedraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
     }
 }
 
-static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
+static void mouse_rotsnap(fpoint a, fpoint b, fpoint *out)
 {
     const static fvector directions[8] = {
         {        1.0f,  0.0f       },   // east
@@ -90,7 +90,7 @@ static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
         {  INV_SQRT2f, -INV_SQRT2f },   // southeast
     };
     const static size_t n_directions = 8;
-    fvector vab = { a.x - b.x, a.y - b.y };
+    fvector vab = subtractfp(a, b); // FIXME ?
     const float vab_len = lengthfv(vab);
     size_t best_direction = 0;
     float best_result = 0.0f;
@@ -106,19 +106,19 @@ static void mouse_rotsnap(SDL_Point a, SDL_Point b, SDL_Point *out)
         }
     }
 
-    out->x = a.x + lroundf(vab_len * directions[best_direction].x);
-    out->y = a.y + lround(vab_len * directions[best_direction].y);
+    *out = addfp(a, scalefv(directions[best_direction], vab_len));
 }
 
 static int nodedraw_handle_event(const SDL_Event *e)
 {
     struct nodedraw_state *state = &nodedraw_state;
-    SDL_Point mouse;
+    SDL_Point tmp;
     SDL_Point arrows;
     SDL_Keymod keymod;
+    fpoint mouse;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->n_points > 1)
@@ -206,16 +206,17 @@ static void nodedraw_render(SDL_Renderer *renderer)
 static struct vertmove_state {
     vertex_id selected;
     vertex_id hovered;
-    SDL_Point orig_point;
+    fpoint orig_point;
 } vertmove_state;
 
 static void vertmove_select(void)
 {
     struct vertmove_state *state = &vertmove_state;
-    SDL_Point mouse;
+    SDL_Point tmp;
+    fpoint mouse;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
@@ -234,13 +235,13 @@ static void vertmove_reset(void)
 static int vertmove_handle_event(const SDL_Event *e)
 {
     struct vertmove_state *state = &vertmove_state;
-    SDL_Point mouse;
-    SDL_Point arrows;
+    SDL_Point tmp;
+    fpoint arrows, mouse;
 
     SDL_Keymod keymod;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->selected != ID_NONE)
@@ -329,10 +330,11 @@ static struct nodedel_state {
 static void nodedel_select(void)
 {
     struct nodedel_state *state = &nodedel_state;
-    SDL_Point mouse;
+    SDL_Point tmp;
+    fpoint mouse;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     memset(state, 0, sizeof *state);
     state->over = canvas_find_node_at(mouse);
@@ -349,10 +351,11 @@ static void nodedel_deselect(void)
 static int nodedel_handle_event(const SDL_Event *e)
 {
     struct nodedel_state *state = &nodedel_state;
-    SDL_Point mouse;
+    SDL_Point tmp;
+    fpoint mouse;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
@@ -390,7 +393,7 @@ static void nodedel_render(SDL_Renderer *renderer)
 /* arcdraw */
 
 static struct arcdraw_state {
-    SDL_Point points[3];
+    fpoint points[3];
     size_t n_points;
     int in_prompt;
 } arcdraw_state;
@@ -405,7 +408,7 @@ static void arcdraw_reset(void)
 static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)))
 {
     struct arcdraw_state *state = &arcdraw_state;
-    SDL_Point ab, ac;
+    fvector ab, ac;
     int s, n_sectors;
     float r, t, tab, tac;
     vertex_id vid[3];
@@ -418,9 +421,9 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
         return;
     }
 
-    r = lengthp(state->points[0], state->points[1]);
-    ab = psubtractp(state->points[1], state->points[0]);
-    ac = psubtractp(state->points[2], state->points[0]);
+    r = lengthfv(subtractfp(state->points[1], state->points[0]));
+    ab = subtractfp(state->points[1], state->points[0]);
+    ac = subtractfp(state->points[2], state->points[0]);
     tab = atan2(ab.y, ab.x);
     tac = atan2(ac.y, ac.x);
     t = (tac - tab);
@@ -431,7 +434,7 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
     if (vid[0] == ID_NONE)
         vid[0] = canvas_add_vertex(state->points[0]);
     for (s = 0; s < n_sectors; s++) {
-        SDL_Point p1, p2;
+        fpoint p1, p2;
         p1.x = state->points[0].x + r * cosf(tab + s * t);
         p1.y = state->points[0].y + r * sinf(tab + s * t);
         vid[1] = canvas_find_vertex_near(p1, 0, NULL);
@@ -454,7 +457,7 @@ static void arcdraw_sectors_cancel(void *ctx __attribute__((unused)))
     arcdraw_reset();
 }
 
-static void arcdraw_start(SDL_Point p)
+static void arcdraw_start(fpoint p)
 {
     struct arcdraw_state *state = &arcdraw_state;
 
@@ -463,7 +466,7 @@ static void arcdraw_start(SDL_Point p)
     state->points[state->n_points++] = p;
 }
 
-static void arcdraw_next_point(SDL_Point p)
+static void arcdraw_next_point(fpoint p)
 {
     struct arcdraw_state *state = &arcdraw_state;
 
@@ -478,7 +481,7 @@ static void arcdraw_next_point(SDL_Point p)
     }
 }
 
-static void arcdraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
+static void arcdraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
 {
     struct arcdraw_state *state = &arcdraw_state;
 
@@ -501,10 +504,11 @@ static void arcdraw_edit_point(const SDL_Point *p_abs, const SDL_Point *p_rel)
 static int arcdraw_handle_event(const SDL_Event *e)
 {
     struct arcdraw_state *state = &arcdraw_state;
-    SDL_Point arrows, mouse;
+    SDL_Point arrows, tmp;
+    fpoint mouse;
 
-    SDL_GetMouseState(&mouse.x, &mouse.y);
-    mouse = from_screen(mouse);
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = from_screen(tmp);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -584,7 +588,7 @@ static void arcdraw_render(SDL_Renderer *renderer)
         arcRGBA(renderer,
                 points[0].x,
                 points[0].y,
-                lengthp(points[0], points[1]),
+                lroundf(lengthp(points[0], points[1])),
                 atan2(ab.y, ab.x) * 180 / M_PI,
                 atan2(ac.y, ac.x) * 180 / M_PI,
                 255, 0, 0, 255);

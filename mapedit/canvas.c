@@ -149,7 +149,7 @@ static void vertex_nodes_ensure(struct vertex *vertex, size_t n)
     }
 }
 
-vertex_id canvas_add_vertex(SDL_Point p)
+vertex_id canvas_add_vertex(fpoint p)
 {
     verts_ensure(1);
     vertex_id id = verts_count++;
@@ -167,7 +167,7 @@ void canvas_delete_vertex(vertex_id id)
     canvas_dirty();
 }
 
-void canvas_edit_vertex(vertex_id id, const SDL_Point *p_abs, const SDL_Point *p_rel)
+void canvas_edit_vertex(vertex_id id, const fpoint *p_abs, const fvector *p_rel)
 {
     assert(id < verts_count);
 
@@ -176,13 +176,12 @@ void canvas_edit_vertex(vertex_id id, const SDL_Point *p_abs, const SDL_Point *p
         canvas_dirty();
     }
     else if (p_rel) {
-        verts[id].p.x += p_rel->x;
-        verts[id].p.y += p_rel->y;
+        verts[id].p = addfp(verts[id].p, *p_rel);
         canvas_dirty();
     }
 }
 
-vertex_id canvas_find_vertex_near(SDL_Point p, int snap2, SDL_Point *out)
+vertex_id canvas_find_vertex_near(fpoint p, float snap2, fpoint *out)
 {
     vertex_id id;
 
@@ -191,23 +190,14 @@ vertex_id canvas_find_vertex_near(SDL_Point p, int snap2, SDL_Point *out)
     for (id = 0; id < verts_count; id++) {
         const struct vertex *v = &verts[id];
         if (v->id == ID_NONE) continue;
-        if (p.x == v->p.x && p.y == v->p.y) {
-            goto found;
-        }
-        else {
-            int dx = p.x - v->p.x;
-            int dy = p.y - v->p.y;
-            int d2 = dx * dx + dy * dy;
-            if (d2 <= snap2)
-                goto found;
+        if (length2fv(subtractfp(p, v->p)) <= snap2) {
+            if (out)
+                *out = verts[id].p;
+            return id;
         }
     }
 
     return ID_NONE;
-
-found:
-    if (out) *out = verts[id].p;
-    return id;
 }
 
 const struct vertex *canvas_vertex(vertex_id id)
@@ -252,7 +242,7 @@ static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid)
 node_id canvas_add_node(vertex_id v[3])
 {
     size_t i;
-    int winding;
+    float winding;
 
     if (v[0] == v[1] || v[1] == v[2] || v[2] == v[0])
         return ID_NONE;
@@ -261,8 +251,8 @@ node_id canvas_add_node(vertex_id v[3])
     node_id id = nodes_count++;
     nodes[id].id = id;
 
-    winding = crossp(psubtractp(verts[v[1]].p, verts[v[0]].p),
-                     psubtractp(verts[v[2]].p, verts[v[0]].p));
+    winding = crossfv(subtractfp(verts[v[1]].p, verts[v[0]].p),
+                      subtractfp(verts[v[2]].p, verts[v[0]].p));
     if (winding < 0) {
         vertex_id tmp = v[1];
         v[1] = v[2];
@@ -294,7 +284,7 @@ void canvas_delete_node(node_id id)
     canvas_dirty();
 }
 
-node_id canvas_find_node_at(SDL_Point p)
+node_id canvas_find_node_at(fpoint p)
 {
     node_id id;
 
@@ -302,13 +292,13 @@ node_id canvas_find_node_at(SDL_Point p)
         struct node *node = &nodes[id];
         if (node->id == ID_NONE) continue;
 
-        if (!same_sidep(p, verts[node->v[2]].p, verts[node->v[0]].p, verts[node->v[1]].p))
+        if (!same_sidefp(p, verts[node->v[2]].p, verts[node->v[0]].p, verts[node->v[1]].p))
             continue;
 
-        if (!same_sidep(p, verts[node->v[0]].p, verts[node->v[1]].p, verts[node->v[2]].p))
+        if (!same_sidefp(p, verts[node->v[0]].p, verts[node->v[1]].p, verts[node->v[2]].p))
             continue;
 
-        if (!same_sidep(p, verts[node->v[1]].p, verts[node->v[2]].p, verts[node->v[0]].p))
+        if (!same_sidefp(p, verts[node->v[1]].p, verts[node->v[2]].p, verts[node->v[0]].p))
             continue;
 
         return id;
@@ -411,7 +401,7 @@ void canvas_save(const char *filename)
         if (v->id == ID_NONE) continue;
         fprintf(stderr, "\rgathering vertices (%zu/%zu)...", i + 1, verts_count);
 
-        json_t *jvp = json_pack("[i, i]", v->p.x, v->p.y);
+        json_t *jvp = json_pack("[f, f]", v->p.x, v->p.y);
 
         json_t *jvn = json_array();
         for (j = 0; j < v->nodes_count; j++) {
@@ -535,13 +525,17 @@ void canvas_load(const char *filename)
 
         /* n.b. these won't be in order, so be careful */
         json_object_foreach(jverts, key, jvert) {
+            double x, y;
             vertex_id vid = strtoul(key, NULL, 10);
             assert(verts[vid].id == vid);
 
             json_t *jnode_ids = NULL;
-            json_unpack(jvert, "{ s: [i, i !], s: o !}",
-                        "p", &verts[vid].p.x, &verts[vid].p.y,
+            json_unpack(jvert, "{ s: [F, F !], s: o !}",
+                        "p", &x, &y,
                         "nodes", &jnode_ids);
+
+            verts[vid].p.x = x;
+            verts[vid].p.y = y;
 
             size_t i;
             json_t *jnode_id;
