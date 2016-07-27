@@ -84,15 +84,18 @@ void camera_zoom_out(void)
     camera_update_offset();
 }
 
-static void camera_move(int x, int y, unsigned flipped)
+static void camera_move(float x, float y, unsigned flipped)
 {
     float div = camera_zoom * camera_unitpx;
+    float x2, y2;
 
     if (!camera_renderer) return;
 
     if (flipped) { x = -x; y = -y; }
-    camera_centre.x -= (x / div);
-    camera_centre.y += (y / div);
+    x2 = 0.5f * x * x;
+    y2 = 0.5f * y * y;
+    camera_centre.x -= (copysignf(x2, x) / div);
+    camera_centre.y += (copysignf(y2, y) / div);
 
     camera_update_offset();
 }
