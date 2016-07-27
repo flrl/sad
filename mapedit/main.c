@@ -52,7 +52,7 @@ int main(int argc, char **argv)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         SDL_RenderClear(renderer);
 
-        canvas_render(renderer);
+        view_render(renderer);
         tool->render(renderer);
         prompt_render(renderer);
 
@@ -61,9 +61,9 @@ int main(int argc, char **argv)
 
     tool->deselect();
 
+    view_destroy();
     canvas_destroy();
     prompt_destroy();
-    view_destroy();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -88,9 +88,6 @@ static void handle_events(void)
             continue;
 
         if (view_handle_event(&e))
-            continue;
-
-        if (canvas_handle_event(&e))
             continue;
 
         if (tool->handle_event(&e))

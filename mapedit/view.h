@@ -12,6 +12,8 @@ extern float camera_zoom;
 void view_init(SDL_Renderer *renderer);
 void view_destroy(void);
 
+void view_update(void);
+
 void view_zoom_in(void);
 void view_zoom_out(void);
 
@@ -19,5 +21,6 @@ SDL_Point to_screen(fpoint);
 fpoint from_screen(SDL_Point p);
 
 int view_handle_event(const SDL_Event *e);
+void view_render(SDL_Renderer *renderer);
 
 #endif

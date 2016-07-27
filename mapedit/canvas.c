@@ -4,7 +4,6 @@
 
 #include <sys/stat.h>
 
-#include <SDL2_gfxPrimitives.h>
 #include <jansson.h>
 
 #include "mapedit/canvas.h"
@@ -14,19 +13,17 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-static struct vertex *verts = NULL;
-static size_t verts_alloc = 0;
-static size_t verts_count = 0;
+struct vertex *verts = NULL;
+size_t verts_alloc = 0;
+size_t verts_count = 0;
 
-static struct node *nodes = NULL;
-static size_t nodes_alloc = 0;
-static size_t nodes_count = 0;
+struct node *nodes = NULL;
+size_t nodes_alloc = 0;
+size_t nodes_count = 0;
 
-static SDL_Texture *texture = NULL;
-static int is_data_dirty = 0;
-static int is_view_dirty = 0;
+int is_data_dirty = 0;
 
-#define canvas_dirty() do { is_data_dirty = is_view_dirty = 1; } while (0)
+#define canvas_dirty() do { is_data_dirty = 1; view_update(); } while (0)
 
 static void canvas_reset(void)
 {
@@ -43,11 +40,7 @@ static void canvas_reset(void)
     verts = NULL;
     verts_count = verts_alloc = 0;
 
-    if (texture) SDL_DestroyTexture(texture);
-    texture = NULL;
-
-    camera_centre.x = camera_centre.y = 0;
-    is_data_dirty = is_view_dirty = 0;
+    is_data_dirty = 0;
 }
 
 void canvas_init(const char *filename)
@@ -314,129 +307,6 @@ const struct node *canvas_node(node_id id)
     return &nodes[id];
 }
 
-int canvas_handle_event(const SDL_Event *e)
-{
-    switch (e->type) {
-        case SDL_WINDOWEVENT:
-        case SDL_MOUSEWHEEL:
-            is_view_dirty = 1;
-            break;
-        case SDL_KEYUP:
-            if (e->key.keysym.sym == SDLK_z) {
-                view_zoom_in();
-                is_view_dirty = 1;
-                return 1;
-            }
-            else if (e->key.keysym.sym == SDLK_x) {
-                view_zoom_out();
-                is_view_dirty = 1;
-                return 1;
-            }
-            break;
-    }
-
-    return 0;
-}
-
-void canvas_render(SDL_Renderer *renderer)
-{
-    if (is_view_dirty || !texture) {
-        SDL_Rect viewport;
-        SDL_Point p;
-        node_id i;
-        fpoint tl, br;
-        float x, y;
-        const float grid_subdiv = 0.25f;
-
-        SDL_RenderGetViewport(renderer, &viewport);
-
-        if (texture) SDL_DestroyTexture(texture);
-
-        texture = SDL_CreateTexture(renderer,
-                                    SDL_PIXELFORMAT_RGBA8888,
-                                    SDL_TEXTUREACCESS_TARGET,
-                                    viewport.w, viewport.h);
-
-        SDL_SetRenderTarget(renderer, texture);
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-
-        for (i = 0; i < nodes_count; i++) {
-            const struct node *n = &nodes[i];
-            if (n->id == ID_NONE) continue;
-
-            SDL_Point points[3] = {
-                to_screen(verts[n->v[0]].p),
-                to_screen(verts[n->v[1]].p),
-                to_screen(verts[n->v[2]].p),
-            };
-
-            filledTrigonRGBA(renderer,
-                             points[0].x, points[0].y,
-                             points[1].x, points[1].y,
-                             points[2].x, points[2].y,
-                             80, 80, 80, 255);
-            trigonRGBA(renderer,
-                       points[0].x, points[0].y,
-                       points[1].x, points[1].y,
-                       points[2].x, points[2].y,
-                       120, 120, 120, 255);
-        }
-
-        p.x = viewport.x; p.y = viewport.y;
-        tl = from_screen(p);
-        p.x += viewport.w; p.y += viewport.h;
-        br = from_screen(p);
-
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-        for (y = floorf(tl.y) - grid_subdiv;
-             y <= ceilf(br.y) + grid_subdiv;
-             y += grid_subdiv) {
-            fpoint fstart = { tl.x, y }, fend = { br.x, y };
-            SDL_Point start, end;
-
-            start = to_screen(fstart);
-            end = to_screen(fend);
-
-            if (truncf(y) == y)
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            else
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
-
-            SDL_RenderDrawLine(renderer,
-                               start.x, start.y,
-                               end.x, end.y);
-        }
-
-        for (x = floorf(tl.x) - grid_subdiv;
-             x <= ceilf(br.x) + grid_subdiv;
-             x += grid_subdiv) {
-            fpoint fstart = { x, tl.y }, fend = { x, br.y };
-            SDL_Point start, end;
-
-            start = to_screen(fstart);
-            end = to_screen(fend);
-
-            if (truncf(x) == x)
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            else
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
-
-            SDL_RenderDrawLine(renderer,
-                               start.x, start.y,
-                               end.x, end.y);
-        }
-
-        SDL_SetRenderTarget(renderer, NULL);
-        is_view_dirty = 0;
-    }
-
-    if (texture)
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-}
-
 int canvas_is_dirty(void)
 {
     return is_data_dirty;
@@ -619,5 +489,5 @@ void canvas_load(const char *filename)
         }
     }
 
-    is_view_dirty = 1;
+    view_update();
 }
