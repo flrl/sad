@@ -342,7 +342,10 @@ void canvas_render(SDL_Renderer *renderer)
 {
     if (is_view_dirty || !texture) {
         SDL_Rect viewport;
+        SDL_Point p;
         node_id i;
+        fpoint tl, br;
+        float x, y;
 
         SDL_RenderGetViewport(renderer, &viewport);
 
@@ -378,6 +381,36 @@ void canvas_render(SDL_Renderer *renderer)
                        points[1].x, points[1].y,
                        points[2].x, points[2].y,
                        120, 120, 120, 255);
+        }
+
+        p.x = viewport.x; p.y = viewport.y;
+        tl = from_screen(p);
+        p.x += viewport.w; p.y += viewport.h;
+        br = from_screen(p);
+
+        SDL_SetRenderDrawColor(renderer, 0, 255, 255, 40);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+        for (y = floorf(tl.y) - 0.5f; y <= ceilf(br.y) + 0.5f; y += 0.5f) {
+            fpoint fstart = { tl.x, y }, fend = { br.x, y };
+            SDL_Point start, end;
+
+            start = to_screen(fstart);
+            end = to_screen(fend);
+            SDL_RenderDrawLine(renderer,
+                               start.x, start.y,
+                               end.x, end.y);
+        }
+
+        for (x = floorf(tl.x) - 0.5f; x <= ceilf(br.x) + 0.5f; x += 0.5f) {
+            fpoint fstart = { x, tl.y }, fend = { x, br.y };
+            SDL_Point start, end;
+
+            start = to_screen(fstart);
+            end = to_screen(fend);
+            SDL_RenderDrawLine(renderer,
+                               start.x, start.y,
+                               end.x, end.y);
         }
 
         SDL_SetRenderTarget(renderer, NULL);
