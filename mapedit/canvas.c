@@ -7,10 +7,10 @@
 #include <SDL2_gfxPrimitives.h>
 #include <jansson.h>
 
-#include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/geometry.h"
 #include "mapedit/util.h"
+#include "mapedit/view.h"
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 

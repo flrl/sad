@@ -1,5 +1,5 @@
-#ifndef MAPEDIT_CAMERA_H
-#define MAPEDIT_CAMERA_H
+#ifndef MAPEDIT_VIEW_H
+#define MAPEDIT_VIEW_H
 
 #include <SDL.h>
 

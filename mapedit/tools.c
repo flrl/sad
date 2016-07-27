@@ -4,11 +4,11 @@
 
 #include <SDL2_gfxPrimitives.h>
 
-#include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/geometry.h"
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
+#include "mapedit/view.h"
 
 #define TOOL_SNAP (5 / camera_unitpx)
 #define TOOL_SNAP2 (TOOL_SNAP * TOOL_SNAP)

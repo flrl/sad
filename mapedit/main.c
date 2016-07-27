@@ -4,10 +4,10 @@
 
 #include <SDL.h>
 
-#include "mapedit/camera.h"
 #include "mapedit/canvas.h"
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
+#include "mapedit/view.h"
 
 static char *filename = NULL;
 static SDL_Window *window = NULL;

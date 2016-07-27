@@ -1,7 +1,7 @@
 #include <SDL.h>
 
-#include "mapedit/camera.h"
 #include "mapedit/geometry.h"
+#include "mapedit/view.h"
 
 fpoint camera_centre = { 0, 0 };
 const float camera_unitpx = 128;

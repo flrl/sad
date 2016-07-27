@@ -11,14 +11,14 @@ sad_SOURCES =       \
     engine/main.c
 
 tools_mapedit_SOURCES = \
-    mapedit/camera.c    \
     mapedit/canvas.c    \
     mapedit/geometry.c  \
     mapedit/main.c      \
     mapedit/prompt.c    \
     mapedit/selection.c \
     mapedit/tools.c     \
-    mapedit/util.c
+    mapedit/util.c      \
+    mapedit/view.c
 
 data_DATA = \
     data/Vera.ttf
