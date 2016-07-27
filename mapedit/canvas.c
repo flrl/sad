@@ -346,6 +346,7 @@ void canvas_render(SDL_Renderer *renderer)
         node_id i;
         fpoint tl, br;
         float x, y;
+        const float grid_subdiv = 0.25f;
 
         SDL_RenderGetViewport(renderer, &viewport);
 
@@ -388,26 +389,41 @@ void canvas_render(SDL_Renderer *renderer)
         p.x += viewport.w; p.y += viewport.h;
         br = from_screen(p);
 
-        SDL_SetRenderDrawColor(renderer, 0, 255, 255, 40);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-        for (y = floorf(tl.y) - 0.5f; y <= ceilf(br.y) + 0.5f; y += 0.5f) {
+        for (y = floorf(tl.y) - grid_subdiv;
+             y <= ceilf(br.y) + grid_subdiv;
+             y += grid_subdiv) {
             fpoint fstart = { tl.x, y }, fend = { br.x, y };
             SDL_Point start, end;
 
             start = to_screen(fstart);
             end = to_screen(fend);
+
+            if (truncf(y) == y)
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+            else
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+
             SDL_RenderDrawLine(renderer,
                                start.x, start.y,
                                end.x, end.y);
         }
 
-        for (x = floorf(tl.x) - 0.5f; x <= ceilf(br.x) + 0.5f; x += 0.5f) {
+        for (x = floorf(tl.x) - grid_subdiv;
+             x <= ceilf(br.x) + grid_subdiv;
+             x += grid_subdiv) {
             fpoint fstart = { x, tl.y }, fend = { x, br.y };
             SDL_Point start, end;
 
             start = to_screen(fstart);
             end = to_screen(fend);
+
+            if (truncf(x) == x)
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+            else
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+
             SDL_RenderDrawLine(renderer,
                                start.x, start.y,
                                end.x, end.y);
