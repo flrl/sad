@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     tool = &tools[TOOL_NODEDRAW];
     tool->select();
 
-    camera_init(renderer);
+    view_init(renderer);
     canvas_init(filename);
     prompt_init();
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
     canvas_destroy();
     prompt_destroy();
-    camera_destroy();
+    view_destroy();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -87,7 +87,7 @@ static void handle_events(void)
         if (prompt_handle_event(&e))
             continue;
 
-        if (camera_handle_event(&e))
+        if (view_handle_event(&e))
             continue;
 
         if (canvas_handle_event(&e))
