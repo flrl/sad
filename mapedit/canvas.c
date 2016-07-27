@@ -321,6 +321,18 @@ int canvas_handle_event(const SDL_Event *e)
         case SDL_MOUSEWHEEL:
             is_view_dirty = 1;
             break;
+        case SDL_KEYUP:
+            if (e->key.keysym.sym == SDLK_z) {
+                camera_zoom_in();
+                is_view_dirty = 1;
+                return 1;
+            }
+            else if (e->key.keysym.sym == SDLK_x) {
+                camera_zoom_out();
+                is_view_dirty = 1;
+                return 1;
+            }
+            break;
     }
 
     return 0;
