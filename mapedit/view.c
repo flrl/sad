@@ -152,6 +152,7 @@ void view_render(SDL_Renderer *renderer)
         fpoint tl, br;
         float x, y;
         const float grid_subdiv = 0.25f;
+        char buf[16];
 
         SDL_RenderGetViewport(renderer, &viewport);
 
@@ -205,14 +206,20 @@ void view_render(SDL_Renderer *renderer)
             start = to_screen(fstart);
             end = to_screen(fend);
 
-            if (truncf(y) == y)
+            if (truncf(y) == y) {
+                snprintf(buf, sizeof(buf), "%.0f", y);
+                stringRGBA(renderer, start.x + 2, start.y - 10, buf, 0, 255, 255, 64);
+
                 SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            else
+            }
+            else {
                 SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+            }
 
             SDL_RenderDrawLine(renderer,
                                start.x, start.y,
                                end.x, end.y);
+
         }
 
         for (x = floorf(tl.x) - grid_subdiv;
@@ -224,10 +231,14 @@ void view_render(SDL_Renderer *renderer)
             start = to_screen(fstart);
             end = to_screen(fend);
 
-            if (truncf(x) == x)
+            if (truncf(x) == x) {
+                snprintf(buf, sizeof(buf), "%.0f", x);
+                stringRGBA(renderer, start.x + 2, start.y + 2, buf, 0, 255, 255, 64);
                 SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            else
+            }
+            else {
                 SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+            }
 
             SDL_RenderDrawLine(renderer,
                                start.x, start.y,
