@@ -49,14 +49,13 @@ void view_destroy(void)
 void view_update(void)
 {
     SDL_Rect viewport;
-    float mult = camera_zoom * camera_unitpx;
 
     if (!view_renderer) return;
 
     SDL_RenderGetViewport(view_renderer, &viewport);
 
-    camera_offset.x = lroundf(mult * camera_centre.x) - (viewport.w / 2);
-    camera_offset.y = lroundf(mult * camera_centre.y) - (viewport.h / 2);
+    camera_offset.x = scalar_to_screen(camera_centre.x) - (viewport.w / 2);
+    camera_offset.y = scalar_to_screen(camera_centre.y) - (viewport.h / 2);
 
     is_view_dirty = 1;
 }
@@ -128,9 +127,8 @@ void view_zoom_out(void)
     view_update();
 }
 
-static void view_move(float x, float y, unsigned flipped)
+static void view_move(int x, int y, unsigned flipped)
 {
-    float div = camera_zoom * camera_unitpx;
     float x2, y2;
 
     if (!view_renderer) return;
@@ -138,8 +136,8 @@ static void view_move(float x, float y, unsigned flipped)
     if (flipped) { x = -x; y = -y; }
     x2 = 0.5f * x * x;
     y2 = 0.5f * y * y;
-    camera_centre.x -= (copysignf(x2, x) / div);
-    camera_centre.y += (copysignf(y2, y) / div);
+    camera_centre.x -= scalar_from_screen(copysignf(x2, x));
+    camera_centre.y += scalar_from_screen(copysignf(y2, y));
 
     view_update();
 }

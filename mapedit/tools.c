@@ -69,10 +69,8 @@ static void nodedraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        SDL_Point p = point_to_screen(state->points[state->n_points -1]);
-        p.x += p_rel->x;
-        p.y += p_rel->y;
-        state->points[state->n_points - 1] = point_from_screen(p);
+        state->points[state->n_points - 1] = addfp(state->points[state->n_points - 1],
+                                                   vector_from_screen(*p_rel));
     }
 }
 
@@ -513,10 +511,8 @@ static void arcdraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        SDL_Point p = point_to_screen(state->points[state->n_points - 1]);
-        p.x += p_rel->x;
-        p.y += p_rel->y;
-        state->points[state->n_points - 1] = point_from_screen(p);
+        state->points[state->n_points - 1] = addfp(state->points[state->n_points - 1],
+                                                   vector_from_screen(*p_rel));
     }
 }
 
