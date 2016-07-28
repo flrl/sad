@@ -70,10 +70,10 @@ static void nodedraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        SDL_Point p = to_screen(state->points[state->n_points -1]);
+        SDL_Point p = point_to_screen(state->points[state->n_points -1]);
         p.x += p_rel->x;
         p.y += p_rel->y;
-        state->points[state->n_points - 1] = from_screen(p);
+        state->points[state->n_points - 1] = point_from_screen(p);
     }
 }
 
@@ -118,7 +118,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
     fpoint mouse;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->n_points > 1)
@@ -176,14 +176,14 @@ static void nodedraw_render(SDL_Renderer *renderer)
     if (!state->n_points) return;
 
     for (n = 0; n < state->n_points; n++) {
-        points[n] = to_screen(state->points[n]);
+        points[n] = point_to_screen(state->points[n]);
     }
 
     switch (state->n_points) {
         case 1:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             /* complete the "line" */
-            points[n++] = to_screen(state->points[0]);
+            points[n++] = point_to_screen(state->points[0]);
             break;
         case 2:
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -191,7 +191,7 @@ static void nodedraw_render(SDL_Renderer *renderer)
         case 3:
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
             /* close the triangle */
-            points[n++] = to_screen(state->points[0]);
+            points[n++] = point_to_screen(state->points[0]);
             break;
 
         default:
@@ -216,7 +216,7 @@ static void vertmove_select(void)
     fpoint mouse;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
@@ -241,7 +241,7 @@ static int vertmove_handle_event(const SDL_Event *e)
     SDL_Keymod keymod;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     keymod = SDL_GetModState();
     if ((keymod & KMOD_SHIFT) && state->selected != ID_NONE)
@@ -306,15 +306,15 @@ static void vertmove_render(SDL_Renderer *renderer)
     if (state->selected != ID_NONE) {
         const struct vertex *vertex = canvas_vertex(state->selected);
 
-        a = to_screen(state->orig_point);
-        b = to_screen(vertex->p);
+        a = point_to_screen(state->orig_point);
+        b = point_to_screen(vertex->p);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
     }
     else if (state->hovered != ID_NONE) {
         const struct vertex *vertex = canvas_vertex(state->hovered);
-        SDL_Point p = to_screen(vertex->p);
+        SDL_Point p = point_to_screen(vertex->p);
 
         filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP * camera_unitpx,
                          120, 120, 120, 255);
@@ -334,7 +334,7 @@ static void nodedel_select(void)
     fpoint mouse;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     memset(state, 0, sizeof *state);
     state->over = canvas_find_node_at(mouse);
@@ -355,7 +355,7 @@ static int nodedel_handle_event(const SDL_Event *e)
     fpoint mouse;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     switch (e->type) {
         case SDL_MOUSEMOTION:
@@ -380,10 +380,10 @@ static void nodedel_render(SDL_Renderer *renderer)
     const struct node *node = canvas_node(state->over);
 
     SDL_Point points[4] = {
-        to_screen(canvas_vertex(node->v[0])->p),
-        to_screen(canvas_vertex(node->v[1])->p),
-        to_screen(canvas_vertex(node->v[2])->p),
-        to_screen(canvas_vertex(node->v[0])->p),
+        point_to_screen(canvas_vertex(node->v[0])->p),
+        point_to_screen(canvas_vertex(node->v[1])->p),
+        point_to_screen(canvas_vertex(node->v[2])->p),
+        point_to_screen(canvas_vertex(node->v[0])->p),
     };
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -494,10 +494,10 @@ static void arcdraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
         state->points[state->n_points - 1] = *p_abs;
     }
     else if (p_rel) {
-        SDL_Point p = to_screen(state->points[state->n_points - 1]);
+        SDL_Point p = point_to_screen(state->points[state->n_points - 1]);
         p.x += p_rel->x;
         p.y += p_rel->y;
-        state->points[state->n_points - 1] = from_screen(p);
+        state->points[state->n_points - 1] = point_from_screen(p);
     }
 }
 
@@ -508,7 +508,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
     fpoint mouse;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
-    mouse = from_screen(tmp);
+    mouse = point_from_screen(tmp);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -559,9 +559,9 @@ static void arcdraw_render(SDL_Renderer *renderer)
 {
     struct arcdraw_state *state = &arcdraw_state;
     SDL_Point points[3] = {
-        to_screen(state->points[0]),
-        to_screen(state->points[1]),
-        to_screen(state->points[2]),
+        point_to_screen(state->points[0]),
+        point_to_screen(state->points[1]),
+        point_to_screen(state->points[2]),
     };
     SDL_Point ab, ac;
 

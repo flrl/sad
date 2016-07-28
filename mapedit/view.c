@@ -26,6 +26,7 @@ extern int is_data_dirty;
 
 void view_init(SDL_Renderer *renderer)
 {
+    camera_offset.x = camera_offset.y = 0;
     camera_centre.x = camera_centre.y = 0;
     view_renderer = renderer;
     is_view_dirty = 0;
@@ -60,21 +61,46 @@ void view_update(void)
     is_view_dirty = 1;
 }
 
-SDL_Point to_screen(fpoint p)
+int scalar_to_screen(float f)
 {
-    SDL_Point screen;
-    float mult = camera_zoom * camera_unitpx;
-    screen.x = lroundf(mult * p.x) - camera_offset.x;
-    screen.y = lroundf(mult * p.y) - camera_offset.y;
+    return lroundf(f * camera_zoom * camera_unitpx);
+}
+
+float scalar_from_screen(int i)
+{
+    return i / (camera_zoom * camera_unitpx);
+}
+
+SDL_Point vectorxy_to_screen(float x, float y)
+{
+    SDL_Point screen = {
+        scalar_to_screen(x),
+        scalar_to_screen(y),
+    };
     return screen;
 }
 
-fpoint from_screen(SDL_Point screen)
+fvector vector_from_screenxy(int x, int y)
 {
-    fpoint p;
+    fvector v = {
+        scalar_from_screen(x),
+        scalar_from_screen(y),
+    };
+    return v;
+}
+
+SDL_Point pointxy_to_screen(float x, float y)
+{
+    return psubtractp(vectorxy_to_screen(x, y), camera_offset);
+}
+
+fpoint point_from_screenxy(int x, int y)
+{
     float div = camera_zoom * camera_unitpx;
-    p.x = (screen.x + camera_offset.x) / div;
-    p.y = (screen.y + camera_offset.y) / div;
+    fpoint p = {
+        (x + camera_offset.x) / div,
+        (y + camera_offset.y) / div
+    };
     return p;
 }
 
@@ -147,7 +173,6 @@ void view_render(SDL_Renderer *renderer)
 {
     if (is_view_dirty || !texture) {
         SDL_Rect viewport;
-        SDL_Point p;
         node_id i;
         fpoint tl, br;
         float x, y;
@@ -173,9 +198,9 @@ void view_render(SDL_Renderer *renderer)
             if (n->id == ID_NONE) continue;
 
             SDL_Point points[3] = {
-                to_screen(verts[n->v[0]].p),
-                to_screen(verts[n->v[1]].p),
-                to_screen(verts[n->v[2]].p),
+                point_to_screen(verts[n->v[0]].p),
+                point_to_screen(verts[n->v[1]].p),
+                point_to_screen(verts[n->v[2]].p),
             };
 
             filledTrigonRGBA(renderer,
@@ -190,21 +215,18 @@ void view_render(SDL_Renderer *renderer)
                        120, 120, 120, 255);
         }
 
-        p.x = viewport.x; p.y = viewport.y;
-        tl = from_screen(p);
-        p.x += viewport.w; p.y += viewport.h;
-        br = from_screen(p);
+        tl = point_from_screenxy(viewport.x, viewport.y);
+        br = point_from_screenxy(viewport.x + viewport.w, viewport.y + viewport.h);
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
         for (y = floorf(tl.y) - grid_subdiv;
              y <= ceilf(br.y) + grid_subdiv;
              y += grid_subdiv) {
-            fpoint fstart = { tl.x, y }, fend = { br.x, y };
             SDL_Point start, end;
 
-            start = to_screen(fstart);
-            end = to_screen(fend);
+            start = pointxy_to_screen(tl.x, y);
+            end = pointxy_to_screen(br.x, y);
 
             if (truncf(y) == y) {
                 snprintf(buf, sizeof(buf), "%.0f", y);
@@ -225,11 +247,10 @@ void view_render(SDL_Renderer *renderer)
         for (x = floorf(tl.x) - grid_subdiv;
              x <= ceilf(br.x) + grid_subdiv;
              x += grid_subdiv) {
-            fpoint fstart = { x, tl.y }, fend = { x, br.y };
             SDL_Point start, end;
 
-            start = to_screen(fstart);
-            end = to_screen(fend);
+            start = pointxy_to_screen(x, tl.y);
+            end = pointxy_to_screen(x, br.y);
 
             if (truncf(x) == x) {
                 snprintf(buf, sizeof(buf), "%.0f", x);
