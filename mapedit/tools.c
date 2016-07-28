@@ -231,11 +231,26 @@ static void vertmove_reset(void)
     state->hovered = ID_NONE;
 }
 
+static void vertmove_edit_vertex(const fpoint *p_abs, const SDL_Point *p_rel)
+{
+    struct vertmove_state *state = &vertmove_state;
+
+    assert(state->selected != ID_NONE);
+
+    if (p_abs) {
+        canvas_edit_vertex(state->selected, p_abs, NULL);
+    }
+    else if (p_rel) {
+        fvector offset = vector_from_screen(*p_rel);
+        canvas_edit_vertex(state->selected, NULL, &offset);
+    }
+}
+
 static int vertmove_handle_event(const SDL_Event *e)
 {
     struct vertmove_state *state = &vertmove_state;
-    SDL_Point tmp;
-    fpoint arrows, mouse;
+    SDL_Point arrows, tmp;
+    fpoint mouse;
 
     SDL_Keymod keymod;
 
@@ -250,7 +265,7 @@ static int vertmove_handle_event(const SDL_Event *e)
         case SDL_KEYUP:
             if (state->selected == ID_NONE) break;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
-                canvas_edit_vertex(state->selected, &state->orig_point, NULL);
+                vertmove_edit_vertex(&state->orig_point, NULL);
                 state->hovered = canvas_find_vertex_near(mouse,
                                                          scalar_from_screen(TOOL_SNAP),
                                                          NULL);
@@ -273,8 +288,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
             if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
             if (arrows.x == 0 && arrows.y == 0) break;
-            /* FIXME arrows is in screen space! */
-            canvas_edit_vertex(state->selected, NULL, &arrows);
+            vertmove_edit_vertex(NULL, &arrows);
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
@@ -289,12 +303,12 @@ static int vertmove_handle_event(const SDL_Event *e)
                                                          scalar_from_screen(TOOL_SNAP),
                                                          NULL);
             else
-                canvas_edit_vertex(state->selected, &mouse, NULL);
+                vertmove_edit_vertex(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->selected == ID_NONE) break;
             if (e->button.button != SDL_BUTTON_LEFT) break;
-            canvas_edit_vertex(state->selected, &mouse, NULL);
+            vertmove_edit_vertex(&mouse, NULL);
             state->hovered = state->selected;
             state->selected = ID_NONE;
             break;
