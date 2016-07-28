@@ -174,16 +174,16 @@ void canvas_edit_vertex(vertex_id id, const fpoint *p_abs, const fvector *p_rel)
     }
 }
 
-vertex_id canvas_find_vertex_near(fpoint p, float snap2, fpoint *out)
+vertex_id canvas_find_vertex_near(fpoint p, float snap, fpoint *out)
 {
     vertex_id id;
 
-    assert (snap2 >= 0);
+    assert(snap >= 0);
 
     for (id = 0; id < verts_count; id++) {
         const struct vertex *v = &verts[id];
         if (v->id == ID_NONE) continue;
-        if (length2fv(subtractfp(p, v->p)) <= snap2) {
+        if (lengthfv(subtractfp(p, v->p)) <= snap) {
             if (out)
                 *out = verts[id].p;
             return id;

@@ -10,8 +10,7 @@
 #include "mapedit/tools.h"
 #include "mapedit/view.h"
 
-#define TOOL_SNAP (5 / camera_unitpx)
-#define TOOL_SNAP2 (TOOL_SNAP * TOOL_SNAP)
+#define TOOL_SNAP (5)
 
 /*** nodedraw ***/
 static struct nodedraw_state {
@@ -146,12 +145,12 @@ static int nodedraw_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             nodedraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             nodedraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
@@ -159,7 +158,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
                 nodedraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             nodedraw_next_point(mouse);
             break;
     }
@@ -220,7 +219,7 @@ static void vertmove_select(void)
 
     memset(state, 0, sizeof *state);
     state->selected = ID_NONE;
-    state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+    state->hovered = canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), NULL);
 }
 
 static void vertmove_reset(void)
@@ -252,12 +251,16 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (state->selected == ID_NONE) break;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
                 canvas_edit_vertex(state->selected, &state->orig_point, NULL);
-                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+                state->hovered = canvas_find_vertex_near(mouse,
+                                                         scalar_from_screen(TOOL_SNAP),
+                                                         NULL);
                 state->selected = ID_NONE;
                 break;
             }
             if (e->key.keysym.sym == SDLK_RETURN) {
-                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+                state->hovered = canvas_find_vertex_near(mouse,
+                                                         scalar_from_screen(TOOL_SNAP),
+                                                         NULL);
                 state->selected = ID_NONE;
                 break;
             }
@@ -282,7 +285,9 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEMOTION:
             if (state->selected == ID_NONE)
-                state->hovered = canvas_find_vertex_near(mouse, TOOL_SNAP2, NULL);
+                state->hovered = canvas_find_vertex_near(mouse,
+                                                         scalar_from_screen(TOOL_SNAP),
+                                                         NULL);
             else
                 canvas_edit_vertex(state->selected, &mouse, NULL);
             break;
@@ -316,7 +321,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         const struct vertex *vertex = canvas_vertex(state->hovered);
         SDL_Point p = point_to_screen(vertex->p);
 
-        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP * camera_unitpx,
+        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
                          120, 120, 120, 255);
     }
 }
@@ -532,13 +537,13 @@ static int arcdraw_handle_event(const SDL_Event *e)
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
             if (state->in_prompt) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             arcdraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0)  break;
             if (state->in_prompt) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             arcdraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
@@ -547,7 +552,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
                 arcdraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, TOOL_SNAP2, &mouse);
+            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
             arcdraw_next_point(mouse);
             break;
     }
