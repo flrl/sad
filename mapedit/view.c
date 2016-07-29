@@ -22,6 +22,7 @@ static SDL_Point camera_offset = { 0, 0 };
 static SDL_Renderer *view_renderer = NULL;
 static SDL_Texture *texture = NULL;
 static int view_show_grid = 0;
+static float view_grid_step = 1.0f;
 static int is_view_dirty = 0;
 
 extern struct vertex *verts;
@@ -39,6 +40,7 @@ void view_init(SDL_Renderer *renderer)
     view_renderer = renderer;
     view_zoom = view_default_zoom;
     view_show_grid = 1;
+    view_grid_step = 1.0f;
     is_view_dirty = 0;
     texture = NULL;
 
@@ -59,6 +61,7 @@ void view_destroy(void)
 void view_update(void)
 {
     SDL_Rect viewport;
+    int subdiv = 1;
 
     if (!view_renderer) return;
 
@@ -66,6 +69,11 @@ void view_update(void)
 
     camera_offset.x = scalar_to_screen(camera_centre.x) - (viewport.w / 2);
     camera_offset.y = scalar_to_screen(camera_centre.y) - (viewport.h / 2);
+
+    while (subdiv < 16 && scalar_to_screen(1.0f / (subdiv * 2)) > 16) {
+        subdiv = subdiv * 2;
+    }
+    view_grid_step = 1.0f / subdiv;
 
     is_view_dirty = 1;
 }
@@ -116,7 +124,7 @@ fpoint point_from_screenxy(int x, int y)
 void view_toggle_grid(void)
 {
     view_show_grid = !view_show_grid;
-    is_view_dirty = 1;
+    view_update();
 }
 
 void view_zoom_in(void)
@@ -189,7 +197,6 @@ void view_render(SDL_Renderer *renderer)
         node_id i;
         fpoint tl, br;
         float x, y;
-        const float grid_subdiv = 0.25f;
         char buf[16];
 
         SDL_RenderGetViewport(renderer, &viewport);
@@ -234,9 +241,9 @@ void view_render(SDL_Renderer *renderer)
 
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-            for (y = floorf(tl.y) - grid_subdiv;
-                 y <= ceilf(br.y) + grid_subdiv;
-                 y += grid_subdiv) {
+            for (y = floorf(tl.y) - view_grid_step;
+                 y <= ceilf(br.y) + view_grid_step;
+                 y += view_grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(tl.x, y);
@@ -249,7 +256,7 @@ void view_render(SDL_Renderer *renderer)
                     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
                 }
                 else {
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 24);
                 }
 
                 SDL_RenderDrawLine(renderer,
@@ -258,9 +265,9 @@ void view_render(SDL_Renderer *renderer)
 
             }
 
-            for (x = floorf(tl.x) - grid_subdiv;
-                 x <= ceilf(br.x) + grid_subdiv;
-                 x += grid_subdiv) {
+            for (x = floorf(tl.x) - view_grid_step;
+                 x <= ceilf(br.x) + view_grid_step;
+                 x += view_grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(x, tl.y);
@@ -272,7 +279,7 @@ void view_render(SDL_Renderer *renderer)
                     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
                 }
                 else {
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 24);
                 }
 
                 SDL_RenderDrawLine(renderer,
