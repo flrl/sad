@@ -7,13 +7,20 @@
 
 fpoint camera_centre = { 0, 0 };
 const float camera_unitpx = 128;
-float camera_zoom = 1;
+
+static const float zoom_levels[] = {
+    1.0f/16, 1.0f/12, 1.0f/8, 1.0f/6, 1.0f/4, 1.0f/3, 1.0f/2,
+    1.0f, /* index 7 */
+    2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
+};
+static const unsigned view_default_zoom = 7;
+static const unsigned view_min_zoom = 0;
+static const unsigned view_max_zoom = 14;
+static unsigned view_zoom = view_default_zoom;
 
 static SDL_Point camera_offset = { 0, 0 };
 static SDL_Renderer *view_renderer = NULL;
 static SDL_Texture *texture = NULL;
-static const float camera_max_zoom = 16.0;
-static const float camera_min_zoom = 1.0 / 16.0;
 static int is_view_dirty = 0;
 
 extern struct vertex *verts;
@@ -29,6 +36,7 @@ void view_init(SDL_Renderer *renderer)
     camera_offset.x = camera_offset.y = 0;
     camera_centre.x = camera_centre.y = 0;
     view_renderer = renderer;
+    view_zoom = view_default_zoom;
     is_view_dirty = 0;
     texture = NULL;
 
@@ -62,12 +70,12 @@ void view_update(void)
 
 int scalar_to_screen(float f)
 {
-    return lroundf(f * camera_zoom * camera_unitpx);
+    return lroundf(f * zoom_levels[view_zoom] * camera_unitpx);
 }
 
 float scalar_from_screen(int i)
 {
-    return i / (camera_zoom * camera_unitpx);
+    return i / (zoom_levels[view_zoom] * camera_unitpx);
 }
 
 SDL_Point vectorxy_to_screen(float x, float y)
@@ -95,7 +103,7 @@ SDL_Point pointxy_to_screen(float x, float y)
 
 fpoint point_from_screenxy(int x, int y)
 {
-    float div = camera_zoom * camera_unitpx;
+    float div = zoom_levels[view_zoom] * camera_unitpx;
     fpoint p = {
         (x + camera_offset.x) / div,
         (y + camera_offset.y) / div
@@ -107,24 +115,20 @@ void view_zoom_in(void)
 {
     if (!view_renderer) return;
 
-    camera_zoom = 2.0 * camera_zoom;
-
-    if (camera_zoom > camera_max_zoom)
-        camera_zoom = camera_max_zoom;
-
-    view_update();
+    if (view_zoom < view_max_zoom) {
+        view_zoom ++;
+        view_update();
+    }
 }
 
 void view_zoom_out(void)
 {
     if (!view_renderer) return;
 
-    camera_zoom = 0.5 * camera_zoom;
-
-    if (camera_zoom < camera_min_zoom)
-        camera_zoom = camera_min_zoom;
-
-    view_update();
+    if (view_zoom > view_min_zoom) {
+        view_zoom --;
+        view_update();
+    }
 }
 
 static void view_move(int x, int y, unsigned flipped)
@@ -152,13 +156,12 @@ int view_handle_event(const SDL_Event *e)
         case SDL_MOUSEWHEEL:
             view_move(e->wheel.x, e->wheel.y, e->wheel.direction);
             break;
-        case SDL_KEYUP:
+        case SDL_KEYDOWN:
             if (e->key.keysym.sym == SDLK_z) {
-                view_zoom_in();
-                return 1;
-            }
-            else if (e->key.keysym.sym == SDLK_x) {
-                view_zoom_out();
+                if ((SDL_GetModState() & KMOD_SHIFT))
+                    view_zoom_out();
+                else
+                    view_zoom_in();
                 return 1;
             }
             break;
