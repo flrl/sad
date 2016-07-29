@@ -5,6 +5,7 @@
 #include <SDL2_gfxPrimitives.h>
 
 #include "mapedit/canvas.h"
+#include "mapedit/colour.h"
 #include "mapedit/geometry.h"
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
@@ -178,15 +179,15 @@ static void nodedraw_render(SDL_Renderer *renderer)
 
     switch (state->n_points) {
         case 1:
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_SetRenderDrawColor(renderer, C(tool_draw0));
             /* complete the "line" */
             points[n++] = point_to_screen(state->points[0]);
             break;
         case 2:
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_SetRenderDrawColor(renderer, C(tool_draw0));
             break;
         case 3:
-            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+            SDL_SetRenderDrawColor(renderer, C(tool_draw1));
             /* close the triangle */
             points[n++] = point_to_screen(state->points[0]);
             break;
@@ -326,7 +327,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         a = point_to_screen(state->orig_point);
         b = point_to_screen(vertex->p);
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, C(tool_draw0));
         SDL_RenderDrawLine(renderer, a.x, a.y, b.x, b.y);
     }
     else if (state->hovered != ID_NONE) {
@@ -334,7 +335,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         SDL_Point p = point_to_screen(vertex->p);
 
         filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
-                         120, 120, 120, 255);
+                         C(tool_highlight));
     }
 }
 
@@ -403,7 +404,7 @@ static void nodedel_render(SDL_Renderer *renderer)
         point_to_screen(canvas_vertex(node->v[0])->p),
     };
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, C(tool_draw0));
     SDL_RenderDrawLines(renderer, points, 4);
 }
 
@@ -583,7 +584,7 @@ static void arcdraw_render(SDL_Renderer *renderer)
     if (state->n_points == 0) return;
 
     if (state->n_points == 2) {
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, C(tool_draw0));
         SDL_RenderDrawLine(renderer,
                            points[0].x, points[0].y,
                            points[1].x, points[1].y);
@@ -592,7 +593,7 @@ static void arcdraw_render(SDL_Renderer *renderer)
         ab = psubtractp(points[1], points[0]);
         ac = psubtractp(points[2], points[0]);
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+        SDL_SetRenderDrawColor(renderer, C(tool_draw1));
         SDL_RenderDrawLine(renderer,
                            points[0].x, points[0].y,
                            points[1].x, points[1].y);
@@ -606,7 +607,7 @@ static void arcdraw_render(SDL_Renderer *renderer)
                 lroundf(lengthp(points[0], points[1])),
                 atan2(ab.y, ab.x) * 180 / M_PI,
                 atan2(ac.y, ac.x) * 180 / M_PI,
-                255, 0, 0, 255);
+                C(tool_draw0));
     }
 }
 

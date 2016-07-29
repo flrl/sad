@@ -12,6 +12,7 @@ sad_SOURCES =       \
 
 tools_mapedit_SOURCES = \
     mapedit/canvas.c    \
+    mapedit/colour.c    \
     mapedit/geometry.c  \
     mapedit/main.c      \
     mapedit/prompt.c    \

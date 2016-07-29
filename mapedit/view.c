@@ -2,6 +2,7 @@
 #include <SDL2_gfxPrimitives.h>
 
 #include "mapedit/canvas.h"
+#include "mapedit/colour.h"
 #include "mapedit/geometry.h"
 #include "mapedit/view.h"
 
@@ -205,7 +206,7 @@ void view_render(SDL_Renderer *renderer)
 
         SDL_SetRenderTarget(renderer, view.texture);
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, C(view_background));
         SDL_RenderClear(renderer);
 
         for (i = 0; i < nodes_count; i++) {
@@ -222,12 +223,12 @@ void view_render(SDL_Renderer *renderer)
                              points[0].x, points[0].y,
                              points[1].x, points[1].y,
                              points[2].x, points[2].y,
-                             80, 80, 80, 255);
+                             C(view_node));
             trigonRGBA(renderer,
                        points[0].x, points[0].y,
                        points[1].x, points[1].y,
                        points[2].x, points[2].y,
-                       120, 120, 120, 255);
+                       C(view_edge));
         }
 
         if (view.show_grid) {
@@ -246,12 +247,12 @@ void view_render(SDL_Renderer *renderer)
 
                 if (truncf(y) == y) {
                     snprintf(buf, sizeof(buf), "%.0f", y);
-                    stringRGBA(renderer, start.x + 2, start.y - 10, buf, 0, 255, 255, 64);
+                    stringRGBA(renderer, start.x + 2, start.y - 10, buf, C(view_grid_coord));
 
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+                    SDL_SetRenderDrawColor(renderer, C(view_grid_major));
                 }
                 else {
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 24);
+                    SDL_SetRenderDrawColor(renderer, C(view_grid_minor));
                 }
 
                 SDL_RenderDrawLine(renderer,
@@ -270,11 +271,11 @@ void view_render(SDL_Renderer *renderer)
 
                 if (truncf(x) == x) {
                     snprintf(buf, sizeof(buf), "%.0f", x);
-                    stringRGBA(renderer, start.x + 2, start.y + 2, buf, 0, 255, 255, 64);
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+                    stringRGBA(renderer, start.x + 2, start.y + 2, buf, C(view_grid_coord));
+                    SDL_SetRenderDrawColor(renderer, C(view_grid_major));
                 }
                 else {
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 24);
+                    SDL_SetRenderDrawColor(renderer, C(view_grid_minor));
                 }
 
                 SDL_RenderDrawLine(renderer,

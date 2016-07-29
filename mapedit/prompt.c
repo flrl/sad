@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
+#include "mapedit/colour.h"
 #include "mapedit/prompt.h"
 
 static TTF_Font *prompt_font = NULL;
@@ -150,7 +151,6 @@ int prompt_handle_event(const SDL_Event *e)
 
 void prompt_render(SDL_Renderer *renderer)
 {
-    static const SDL_Color text_color = { 255, 255, 255, 255 };
     struct prompt_state *state = &prompt_state;
 
     if (!state->in_use) return;
@@ -168,7 +168,7 @@ void prompt_render(SDL_Renderer *renderer)
         len = strlen(state->query) + strlen(state->input) + 1;
         tmp = malloc(len);
         snprintf(tmp, len, "%s%s", state->query, state->input);
-        surface = TTF_RenderUTF8_Blended(prompt_font, tmp, text_color);
+        surface = TTF_RenderUTF8_Blended(prompt_font, tmp, prompt_text);
         free(tmp);
 
         if (surface) {
@@ -205,9 +205,7 @@ void prompt_render(SDL_Renderer *renderer)
 
         /* blinking cursor */
         if (SDL_GetTicks() % 1000 > 500) {
-            SDL_SetRenderDrawColor(renderer,
-                                text_color.r, text_color.g, text_color.b,
-                                text_color.a);
+            SDL_SetRenderDrawColor(renderer, C(prompt_text));
             SDL_RenderDrawLine(renderer,
                             state->dstrect.x + state->dstrect.w,
                             state->dstrect.y,

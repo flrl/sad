@@ -5,6 +5,7 @@
 #include <SDL.h>
 
 #include "mapedit/canvas.h"
+#include "mapedit/colour.h"
 #include "mapedit/prompt.h"
 #include "mapedit/tools.h"
 #include "mapedit/view.h"
@@ -49,7 +50,7 @@ int main(int argc, char **argv)
 
         update_window_title();
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+        SDL_SetRenderDrawColor(renderer, C(main_background));
         SDL_RenderClear(renderer);
 
         view_render(renderer);
