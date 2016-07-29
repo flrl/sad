@@ -8,13 +8,13 @@
 const float camera_unitpx = 128;
 
 static const float zoom_levels[] = {
-    1.0f/16, 1.0f/12, 1.0f/8, 1.0f/6, 1.0f/4, 1.0f/3, 1.0f/2,
-    1.0f, /* index 7 */
-    2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
+    1.0f/16, 1.0f/12, 1.0f/8, 1.0f/6, 1.0f/4, 1.0f/3, 1.0f/2, 0.75f,
+    1.0f, /* index 8 */
+    1.25f, 1.5f, 1.75f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
 };
-static const unsigned view_default_zoom = 7;
+static const unsigned view_default_zoom = 8;
 static const unsigned view_min_zoom = 0;
-static const unsigned view_max_zoom = 14;
+static const unsigned view_max_zoom = 18;
 
 static struct {
     SDL_Renderer *renderer;
@@ -65,7 +65,7 @@ void view_update(void)
     view.camera_offset.x = scalar_to_screen(view.camera_centre.x) - (viewport.w / 2);
     view.camera_offset.y = scalar_to_screen(view.camera_centre.y) - (viewport.h / 2);
 
-    while (subdiv < 16 && scalar_to_screen(1.0f / (subdiv * 2)) > 16)
+    while (subdiv <= 16 && scalar_to_screen(1.0f / (subdiv * 2)) >= 24)
         subdiv = subdiv * 2;
     view.grid_step = 1.0f / subdiv;
 
@@ -168,10 +168,11 @@ int view_handle_event(const SDL_Event *e)
             break;
         case SDL_KEYDOWN:
             if (e->key.keysym.sym == SDLK_z) {
-                if ((SDL_GetModState() & KMOD_SHIFT))
-                    view_zoom_out();
-                else
-                    view_zoom_in();
+                view_zoom_in();
+                return 1;
+            }
+            else if (e->key.keysym.sym == SDLK_x) {
+                view_zoom_out();
                 return 1;
             }
             else if (e->key.keysym.sym == SDLK_g) {
