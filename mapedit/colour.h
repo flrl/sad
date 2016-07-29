@@ -16,7 +16,8 @@ extern const SDL_Color view_grid_minor;
 
 extern const SDL_Color tool_draw0;
 extern const SDL_Color tool_draw1;
-extern const SDL_Color tool_highlight;
+extern const SDL_Color tool_move_high;
+extern const SDL_Color tool_del_high;
 
 extern const SDL_Color prompt_text;
 

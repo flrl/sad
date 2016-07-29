@@ -11,6 +11,7 @@ const SDL_Color view_grid_minor = {   0, 255, 255, 24  };
 
 const SDL_Color tool_draw0      = { 255,   0,   0, 255 };
 const SDL_Color tool_draw1      = { 255, 255,   0, 255 };
-const SDL_Color tool_highlight  = { 120, 120, 120, 255 };
+const SDL_Color tool_move_high  = { 120, 120, 120, 255 };
+const SDL_Color tool_del_high   = { 255,   0,   0,  64 };
 
 const SDL_Color prompt_text     = { 255, 255, 255, 255 };

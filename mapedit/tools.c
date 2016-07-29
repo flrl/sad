@@ -335,7 +335,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         SDL_Point p = point_to_screen(vertex->p);
 
         filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
-                         C(tool_highlight));
+                         C(tool_move_high));
     }
 }
 
@@ -397,15 +397,17 @@ static void nodedel_render(SDL_Renderer *renderer)
 
     const struct node *node = canvas_node(state->over);
 
-    SDL_Point points[4] = {
+    SDL_Point points[3] = {
         point_to_screen(canvas_vertex(node->v[0])->p),
         point_to_screen(canvas_vertex(node->v[1])->p),
         point_to_screen(canvas_vertex(node->v[2])->p),
-        point_to_screen(canvas_vertex(node->v[0])->p),
     };
 
-    SDL_SetRenderDrawColor(renderer, C(tool_draw0));
-    SDL_RenderDrawLines(renderer, points, 4);
+    filledTrigonRGBA(renderer,
+                     points[0].x, points[0].y,
+                     points[1].x, points[1].y,
+                     points[2].x, points[2].y,
+                     C(tool_del_high));
 }
 
 /* arcdraw */
