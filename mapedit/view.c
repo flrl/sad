@@ -21,6 +21,7 @@ static unsigned view_zoom = view_default_zoom;
 static SDL_Point camera_offset = { 0, 0 };
 static SDL_Renderer *view_renderer = NULL;
 static SDL_Texture *texture = NULL;
+static int view_show_grid = 0;
 static int is_view_dirty = 0;
 
 extern struct vertex *verts;
@@ -37,6 +38,7 @@ void view_init(SDL_Renderer *renderer)
     camera_centre.x = camera_centre.y = 0;
     view_renderer = renderer;
     view_zoom = view_default_zoom;
+    view_show_grid = 1;
     is_view_dirty = 0;
     texture = NULL;
 
@@ -111,6 +113,12 @@ fpoint point_from_screenxy(int x, int y)
     return p;
 }
 
+void view_toggle_grid(void)
+{
+    view_show_grid = !view_show_grid;
+    is_view_dirty = 1;
+}
+
 void view_zoom_in(void)
 {
     if (!view_renderer) return;
@@ -162,6 +170,10 @@ int view_handle_event(const SDL_Event *e)
                     view_zoom_out();
                 else
                     view_zoom_in();
+                return 1;
+            }
+            else if (e->key.keysym.sym == SDLK_g) {
+                view_toggle_grid();
                 return 1;
             }
             break;
@@ -216,55 +228,57 @@ void view_render(SDL_Renderer *renderer)
                        120, 120, 120, 255);
         }
 
-        tl = point_from_screenxy(viewport.x, viewport.y);
-        br = point_from_screenxy(viewport.x + viewport.w, viewport.y + viewport.h);
+        if (view_show_grid) {
+            tl = point_from_screenxy(viewport.x, viewport.y);
+            br = point_from_screenxy(viewport.x + viewport.w, viewport.y + viewport.h);
 
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-        for (y = floorf(tl.y) - grid_subdiv;
-             y <= ceilf(br.y) + grid_subdiv;
-             y += grid_subdiv) {
-            SDL_Point start, end;
+            for (y = floorf(tl.y) - grid_subdiv;
+                 y <= ceilf(br.y) + grid_subdiv;
+                 y += grid_subdiv) {
+                SDL_Point start, end;
 
-            start = pointxy_to_screen(tl.x, y);
-            end = pointxy_to_screen(br.x, y);
+                start = pointxy_to_screen(tl.x, y);
+                end = pointxy_to_screen(br.x, y);
 
-            if (truncf(y) == y) {
-                snprintf(buf, sizeof(buf), "%.0f", y);
-                stringRGBA(renderer, start.x + 2, start.y - 10, buf, 0, 255, 255, 64);
+                if (truncf(y) == y) {
+                    snprintf(buf, sizeof(buf), "%.0f", y);
+                    stringRGBA(renderer, start.x + 2, start.y - 10, buf, 0, 255, 255, 64);
 
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            }
-            else {
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
-            }
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+                }
+                else {
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+                }
 
-            SDL_RenderDrawLine(renderer,
-                               start.x, start.y,
-                               end.x, end.y);
+                SDL_RenderDrawLine(renderer,
+                                start.x, start.y,
+                                end.x, end.y);
 
-        }
-
-        for (x = floorf(tl.x) - grid_subdiv;
-             x <= ceilf(br.x) + grid_subdiv;
-             x += grid_subdiv) {
-            SDL_Point start, end;
-
-            start = pointxy_to_screen(x, tl.y);
-            end = pointxy_to_screen(x, br.y);
-
-            if (truncf(x) == x) {
-                snprintf(buf, sizeof(buf), "%.0f", x);
-                stringRGBA(renderer, start.x + 2, start.y + 2, buf, 0, 255, 255, 64);
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
-            }
-            else {
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
             }
 
-            SDL_RenderDrawLine(renderer,
-                               start.x, start.y,
-                               end.x, end.y);
+            for (x = floorf(tl.x) - grid_subdiv;
+                 x <= ceilf(br.x) + grid_subdiv;
+                 x += grid_subdiv) {
+                SDL_Point start, end;
+
+                start = pointxy_to_screen(x, tl.y);
+                end = pointxy_to_screen(x, br.y);
+
+                if (truncf(x) == x) {
+                    snprintf(buf, sizeof(buf), "%.0f", x);
+                    stringRGBA(renderer, start.x + 2, start.y + 2, buf, 0, 255, 255, 64);
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 48);
+                }
+                else {
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 32);
+                }
+
+                SDL_RenderDrawLine(renderer,
+                                start.x, start.y,
+                                end.x, end.y);
+            }
         }
 
         SDL_SetRenderTarget(renderer, NULL);
