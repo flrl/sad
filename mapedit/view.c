@@ -5,7 +5,6 @@
 #include "mapedit/geometry.h"
 #include "mapedit/view.h"
 
-fpoint camera_centre = { 0, 0 };
 const float camera_unitpx = 128;
 
 static const float zoom_levels[] = {
@@ -16,14 +15,17 @@ static const float zoom_levels[] = {
 static const unsigned view_default_zoom = 7;
 static const unsigned view_min_zoom = 0;
 static const unsigned view_max_zoom = 14;
-static unsigned view_zoom = view_default_zoom;
 
-static SDL_Point camera_offset = { 0, 0 };
-static SDL_Renderer *view_renderer = NULL;
-static SDL_Texture *texture = NULL;
-static int view_show_grid = 0;
-static float view_grid_step = 1.0f;
-static int is_view_dirty = 0;
+static struct {
+    SDL_Renderer *renderer;
+    SDL_Texture *texture;
+    SDL_Point camera_offset;
+    fpoint camera_centre;
+    float grid_step;
+    int show_grid;
+    unsigned zoom;
+    int is_dirty;
+} view;
 
 extern struct vertex *verts;
 extern size_t verts_alloc;
@@ -35,27 +37,20 @@ extern int is_data_dirty;
 
 void view_init(SDL_Renderer *renderer)
 {
-    camera_offset.x = camera_offset.y = 0;
-    camera_centre.x = camera_centre.y = 0;
-    view_renderer = renderer;
-    view_zoom = view_default_zoom;
-    view_show_grid = 1;
-    view_grid_step = 1.0f;
-    is_view_dirty = 0;
-    texture = NULL;
+    memset(&view, 0, sizeof(view));
+    view.renderer = renderer;
+    view.zoom = view_default_zoom;
+    view.show_grid = 1;
+    view.grid_step = 1.0f;
 
     view_update();
 }
 
 void view_destroy(void)
 {
-    camera_offset.x = camera_offset.y = 0;
-    camera_centre.x = camera_centre.y = 0;
-    view_renderer = NULL;
-    is_view_dirty = 0;
+    if (view.texture) SDL_DestroyTexture(view.texture);
 
-    if (texture) SDL_DestroyTexture(texture);
-    texture = NULL;
+    memset(&view, 0, sizeof(view));
 }
 
 void view_update(void)
@@ -63,29 +58,28 @@ void view_update(void)
     SDL_Rect viewport;
     int subdiv = 1;
 
-    if (!view_renderer) return;
+    if (!view.renderer) return;
 
-    SDL_RenderGetViewport(view_renderer, &viewport);
+    SDL_RenderGetViewport(view.renderer, &viewport);
 
-    camera_offset.x = scalar_to_screen(camera_centre.x) - (viewport.w / 2);
-    camera_offset.y = scalar_to_screen(camera_centre.y) - (viewport.h / 2);
+    view.camera_offset.x = scalar_to_screen(view.camera_centre.x) - (viewport.w / 2);
+    view.camera_offset.y = scalar_to_screen(view.camera_centre.y) - (viewport.h / 2);
 
-    while (subdiv < 16 && scalar_to_screen(1.0f / (subdiv * 2)) > 16) {
+    while (subdiv < 16 && scalar_to_screen(1.0f / (subdiv * 2)) > 16)
         subdiv = subdiv * 2;
-    }
-    view_grid_step = 1.0f / subdiv;
+    view.grid_step = 1.0f / subdiv;
 
-    is_view_dirty = 1;
+    view.is_dirty = 1;
 }
 
 int scalar_to_screen(float f)
 {
-    return lroundf(f * zoom_levels[view_zoom] * camera_unitpx);
+    return lroundf(f * zoom_levels[view.zoom] * camera_unitpx);
 }
 
 float scalar_from_screen(int i)
 {
-    return i / (zoom_levels[view_zoom] * camera_unitpx);
+    return i / (zoom_levels[view.zoom] * camera_unitpx);
 }
 
 SDL_Point vectorxy_to_screen(float x, float y)
@@ -108,41 +102,41 @@ fvector vector_from_screenxy(int x, int y)
 
 SDL_Point pointxy_to_screen(float x, float y)
 {
-    return psubtractp(vectorxy_to_screen(x, y), camera_offset);
+    return psubtractp(vectorxy_to_screen(x, y), view.camera_offset);
 }
 
 fpoint point_from_screenxy(int x, int y)
 {
-    float div = zoom_levels[view_zoom] * camera_unitpx;
+    float div = zoom_levels[view.zoom] * camera_unitpx;
     fpoint p = {
-        (x + camera_offset.x) / div,
-        (y + camera_offset.y) / div
+        (x + view.camera_offset.x) / div,
+        (y + view.camera_offset.y) / div
     };
     return p;
 }
 
 void view_toggle_grid(void)
 {
-    view_show_grid = !view_show_grid;
+    view.show_grid = !view.show_grid;
     view_update();
 }
 
 void view_zoom_in(void)
 {
-    if (!view_renderer) return;
+    if (!view.renderer) return;
 
-    if (view_zoom < view_max_zoom) {
-        view_zoom ++;
+    if (view.zoom < view_max_zoom) {
+        view.zoom ++;
         view_update();
     }
 }
 
 void view_zoom_out(void)
 {
-    if (!view_renderer) return;
+    if (!view.renderer) return;
 
-    if (view_zoom > view_min_zoom) {
-        view_zoom --;
+    if (view.zoom > view_min_zoom) {
+        view.zoom --;
         view_update();
     }
 }
@@ -151,13 +145,13 @@ static void view_move(int x, int y, unsigned flipped)
 {
     float x2, y2;
 
-    if (!view_renderer) return;
+    if (!view.renderer) return;
 
     if (flipped) { x = -x; y = -y; }
     x2 = 0.5f * x * x;
     y2 = 0.5f * y * y;
-    camera_centre.x -= scalar_from_screen(copysignf(x2, x));
-    camera_centre.y += scalar_from_screen(copysignf(y2, y));
+    view.camera_centre.x -= scalar_from_screen(copysignf(x2, x));
+    view.camera_centre.y += scalar_from_screen(copysignf(y2, y));
 
     view_update();
 }
@@ -192,7 +186,7 @@ int view_handle_event(const SDL_Event *e)
 
 void view_render(SDL_Renderer *renderer)
 {
-    if (is_view_dirty || !texture) {
+    if (view.is_dirty || !view.texture) {
         SDL_Rect viewport;
         node_id i;
         fpoint tl, br;
@@ -201,14 +195,14 @@ void view_render(SDL_Renderer *renderer)
 
         SDL_RenderGetViewport(renderer, &viewport);
 
-        if (texture) SDL_DestroyTexture(texture);
+        if (view.texture) SDL_DestroyTexture(view.texture);
 
-        texture = SDL_CreateTexture(renderer,
-                                    SDL_PIXELFORMAT_RGBA8888,
-                                    SDL_TEXTUREACCESS_TARGET,
-                                    viewport.w, viewport.h);
+        view.texture = SDL_CreateTexture(renderer,
+                                               SDL_PIXELFORMAT_RGBA8888,
+                                               SDL_TEXTUREACCESS_TARGET,
+                                               viewport.w, viewport.h);
 
-        SDL_SetRenderTarget(renderer, texture);
+        SDL_SetRenderTarget(renderer, view.texture);
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
@@ -235,15 +229,15 @@ void view_render(SDL_Renderer *renderer)
                        120, 120, 120, 255);
         }
 
-        if (view_show_grid) {
+        if (view.show_grid) {
             tl = point_from_screenxy(viewport.x, viewport.y);
             br = point_from_screenxy(viewport.x + viewport.w, viewport.y + viewport.h);
 
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-            for (y = floorf(tl.y) - view_grid_step;
-                 y <= ceilf(br.y) + view_grid_step;
-                 y += view_grid_step) {
+            for (y = floorf(tl.y) - view.grid_step;
+                 y <= ceilf(br.y) + view.grid_step;
+                 y += view.grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(tl.x, y);
@@ -265,9 +259,9 @@ void view_render(SDL_Renderer *renderer)
 
             }
 
-            for (x = floorf(tl.x) - view_grid_step;
-                 x <= ceilf(br.x) + view_grid_step;
-                 x += view_grid_step) {
+            for (x = floorf(tl.x) - view.grid_step;
+                 x <= ceilf(br.x) + view.grid_step;
+                 x += view.grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(x, tl.y);
@@ -289,9 +283,9 @@ void view_render(SDL_Renderer *renderer)
         }
 
         SDL_SetRenderTarget(renderer, NULL);
-        is_view_dirty = 0;
+        view.is_dirty = 0;
     }
 
-    if (texture)
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+    if (view.texture)
+        SDL_RenderCopy(renderer, view.texture, NULL, NULL);
 }
