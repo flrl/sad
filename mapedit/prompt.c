@@ -201,16 +201,25 @@ void prompt_render(SDL_Renderer *renderer)
     }
 
     if (state->texture) {
+        SDL_Rect bgspace;
+
+        SDL_RenderGetViewport(renderer, &bgspace);
+        bgspace.y = state->dstrect.y - 2;
+        bgspace.h = state->dstrect.h + 4;
+
+        SDL_SetRenderDrawColor(renderer, C(prompt_fill));
+        SDL_RenderFillRect(renderer, &bgspace);
+
         SDL_RenderCopy(renderer, state->texture, &state->srcrect, &state->dstrect);
 
         /* blinking cursor */
-        if (SDL_GetTicks() % 1000 > 500) {
+        if (SDL_GetTicks() % 1000 >= 500) {
             SDL_SetRenderDrawColor(renderer, C(prompt_text));
             SDL_RenderDrawLine(renderer,
-                            state->dstrect.x + state->dstrect.w,
-                            state->dstrect.y,
-                            state->dstrect.x + state->dstrect.w,
-                            state->dstrect.y + state->dstrect.h);
+                               state->dstrect.x + state->dstrect.w,
+                               state->dstrect.y,
+                               state->dstrect.x + state->dstrect.w,
+                               state->dstrect.y + state->dstrect.h);
         }
     }
 }

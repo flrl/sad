@@ -15,3 +15,4 @@ const SDL_Color tool_move_high  = { 120, 120, 120, 255 };
 const SDL_Color tool_del_high   = { 255,   0,   0,  64 };
 
 const SDL_Color prompt_text     = { 255, 255, 255, 255 };
+const SDL_Color prompt_fill     = {   0,   0,   0, 180 };

@@ -20,5 +20,6 @@ extern const SDL_Color tool_move_high;
 extern const SDL_Color tool_del_high;
 
 extern const SDL_Color prompt_text;
+extern const SDL_Color prompt_fill;
 
 #endif
