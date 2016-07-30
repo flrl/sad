@@ -9,13 +9,13 @@
 const float camera_unitpx = 128;
 
 static const float zoom_levels[] = {
-    1.0f/16, 1.0f/12, 1.0f/8, 1.0f/6, 1.0f/4, 1.0f/3, 1.0f/2, 0.75f,
-    1.0f, /* index 8 */
-    1.25f, 1.5f, 1.75f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
+    1.0f/16, 1.0f/8, 3.0f/16, 1.0f/4, 1.0f/2, 3.0f/4,
+    1.0f, /* index 6 */
+    5.0f/4, 3.0f/2, 7.0f/4, 2.0f, 5.0f/2, 3.0f, 7.0f/2, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
 };
-static const unsigned view_default_zoom = 8;
+static const unsigned view_default_zoom = 6;
 static const unsigned view_min_zoom = 0;
-static const unsigned view_max_zoom = 18;
+static const unsigned view_max_zoom = sizeof(zoom_levels) / sizeof(zoom_levels[0]) - 1;
 
 static struct {
     SDL_Renderer *renderer;
