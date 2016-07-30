@@ -3,14 +3,13 @@
 
 #include <SDL_rect.h>
 
-#define INV_SQRT2f (1.0f / (M_SQRT2))
-
+#define INV_SQRT2 (1.0 / (M_SQRT2))
 
 SDL_Point paddp(SDL_Point a, SDL_Point b);
 SDL_Point psubtractp(SDL_Point a, SDL_Point b);
 int crossp(SDL_Point a, SDL_Point b);
 int same_sidep(SDL_Point p1, SDL_Point p2, SDL_Point a, SDL_Point b);
-float lengthp(SDL_Point a, SDL_Point b);
+double lengthp(SDL_Point a, SDL_Point b);
 
 struct s_f2 {
     float x;
@@ -20,15 +19,15 @@ struct s_f2 {
 typedef struct s_f2 fpoint;
 typedef struct s_f2 fvector;
 
-float dotfv(fvector a, fvector b);
-float crossfv(fvector a, fvector b);
-float length2fv(fvector v);
-float lengthfv(fvector v);
+double dotfv(fvector a, fvector b);
+double crossfv(fvector a, fvector b);
+double length2fv(fvector v);
+double lengthfv(fvector v);
 
 int same_sidefp(fpoint p1, fpoint p2, fpoint a, fpoint b);
 
 fpoint addfp(fpoint p, fvector v);
 fvector subtractfp(fpoint a, fpoint b);
-fvector scalefv(fvector v, float l);
+fvector scalefv(fvector v, double l);
 fvector projectfv(fvector a, fvector b);
 #endif

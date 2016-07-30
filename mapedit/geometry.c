@@ -30,38 +30,38 @@ int same_sidep(SDL_Point p1, SDL_Point p2, SDL_Point a, SDL_Point b)
     return 0;
 }
 
-float lengthp(SDL_Point a, SDL_Point b)
+double lengthp(SDL_Point a, SDL_Point b)
 {
     int dx = b.x - a.x;
     int dy = b.y - a.y;
-    return sqrtf(dx * dx + dy * dy);
+    return sqrt(dx * dx + dy * dy);
 }
 
-float dotfv(fvector a, fvector b)
+double dotfv(fvector a, fvector b)
 {
-    return a.x * b.x + a.y * b.y;
+    return (double) a.x * b.x + (double) a.y * b.y;
 }
 
-float crossfv(fvector a, fvector b)
+double crossfv(fvector a, fvector b)
 {
-    return a.x * b.y - a.y * b.x;
+    return (double) a.x * b.y - (double) a.y * b.x;
 }
 
-float length2fv(fvector v)
+double length2fv(fvector v)
 {
-    return v.x * v.x + v.y * v.y;
+    return (double) v.x * v.x + (double) v.y * v.y;
 }
 
-float lengthfv(fvector v)
+double lengthfv(fvector v)
 {
-    return sqrtf(length2fv(v));
+    return sqrt(length2fv(v));
 }
 
 /* are p1 and p2 both on the same side of the line ab? */
 int same_sidefp(fpoint p1, fpoint p2, fpoint a, fpoint b)
 {
-    float cp1 = crossfv(subtractfp(b, a), subtractfp(p1, a));
-    float cp2 = crossfv(subtractfp(b, a), subtractfp(p2, a));
+    double cp1 = crossfv(subtractfp(b, a), subtractfp(p1, a));
+    double cp2 = crossfv(subtractfp(b, a), subtractfp(p2, a));
     if (cp1 >= 0 && cp2 >= 0)
         return 1;
     if (cp1 < 0 && cp2 < 0)
@@ -72,17 +72,17 @@ int same_sidefp(fpoint p1, fpoint p2, fpoint a, fpoint b)
 
 fpoint addfp(fpoint p, fvector v)
 {
-    fpoint result = { p.x + v.x, p.y + v.y };
+    fpoint result = { (double) p.x + v.x, (double) p.y + v.y };
     return result;
 }
 
 fvector subtractfp(fpoint a, fpoint b)
 {
-    fvector result = { a.x - b.x, a.y - b.y };
+    fvector result = { (double) a.x - b.x, (double) a.y - b.y };
     return result;
 }
 
-fvector scalefv(fvector v, float l)
+fvector scalefv(fvector v, double l)
 {
     fvector result = { v.x * l, v.y * l };
     return result;
@@ -91,7 +91,7 @@ fvector scalefv(fvector v, float l)
 fvector projectfv(fvector a, fvector b)
 {
     fvector result = { 0.0f, 0.0f };
-    if (length2fv(a) == 0.0f || length2fv(b) == 0.0f)
+    if (length2fv(a) == 0.0 || length2fv(b) == 0.0)
         return result;
     result = scalefv(b, dotfv(a, b) / dotfv(b, b));
     return result;

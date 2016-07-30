@@ -8,12 +8,12 @@
 #include "mapedit/geometry.h"
 #include "mapedit/view.h"
 
-const float camera_unitpx = 128;
+const double camera_unitpx = 128;
 
-static const float zoom_levels[] = {
-    1.0f/16, 1.0f/8, 3.0f/16, 1.0f/4, 1.0f/2, 3.0f/4,
-    1.0f, /* index 6 */
-    5.0f/4, 3.0f/2, 7.0f/4, 2.0f, 5.0f/2, 3.0f, 7.0f/2, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f,
+static const double zoom_levels[] = {
+    1.0/16, 1.0/8, 3.0/16, 1.0/4, 1.0/2, 3.0/4,
+    1.0, /* index 6 */
+    5.0/4, 3.0/2, 7.0/4, 2.0, 5.0/2, 3.0, 7.0/2, 4.0, 6.0, 8.0, 12.0, 16.0,
 };
 static const unsigned view_default_zoom = 6;
 static const unsigned view_min_zoom = 0;
@@ -24,7 +24,7 @@ static struct {
     SDL_Texture *texture;
     SDL_Point camera_offset;
     fpoint camera_centre;
-    float grid_step;
+    double grid_step;
     int show_grid;
     int show_mouse_pos;
     unsigned zoom;
@@ -45,7 +45,7 @@ void view_init(SDL_Renderer *renderer)
     view.renderer = renderer;
     view.zoom = view_default_zoom;
     view.show_grid = 1;
-    view.grid_step = 1.0f;
+    view.grid_step = 1.0;
     view.show_mouse_pos = 1;
 
     view_update();
@@ -70,24 +70,24 @@ void view_update(void)
     view.camera_offset.x = scalar_to_screen(view.camera_centre.x) - (viewport.w / 2);
     view.camera_offset.y = scalar_to_screen(view.camera_centre.y) - (viewport.h / 2);
 
-    while (subdiv <= 16 && scalar_to_screen(1.0f / (subdiv * 2)) >= 24)
+    while (subdiv <= 16 && scalar_to_screen(1.0 / (subdiv * 2)) >= 24)
         subdiv = subdiv * 2;
-    view.grid_step = 1.0f / subdiv;
+    view.grid_step = 1.0 / subdiv;
 
     view.is_dirty = 1;
 }
 
-int scalar_to_screen(float f)
+int scalar_to_screen(double d)
 {
-    return lroundf(f * zoom_levels[view.zoom] * camera_unitpx);
+    return lround(d * zoom_levels[view.zoom] * camera_unitpx);
 }
 
-float scalar_from_screen(int i)
+double scalar_from_screen(double d)
 {
-    return i / (zoom_levels[view.zoom] * camera_unitpx);
+    return d / (zoom_levels[view.zoom] * camera_unitpx);
 }
 
-SDL_Point vectorxy_to_screen(float x, float y)
+SDL_Point vectorxy_to_screen(double x, double y)
 {
     SDL_Point screen = {
         scalar_to_screen(x),
@@ -105,14 +105,14 @@ fvector vector_from_screenxy(int x, int y)
     return v;
 }
 
-SDL_Point pointxy_to_screen(float x, float y)
+SDL_Point pointxy_to_screen(double x, double y)
 {
     return psubtractp(vectorxy_to_screen(x, y), view.camera_offset);
 }
 
 fpoint point_from_screenxy(int x, int y)
 {
-    float div = zoom_levels[view.zoom] * camera_unitpx;
+    double div = zoom_levels[view.zoom] * camera_unitpx;
     fpoint p = {
         (x + view.camera_offset.x) / div,
         (y + view.camera_offset.y) / div
@@ -151,15 +151,15 @@ void view_zoom_out(void)
     }
 }
 
-fpoint view_find_gridpoint_near(fpoint p, float snap)
+fpoint view_find_gridpoint_near(fpoint p, double snap)
 {
-    float x, y;
+    double x, y;
     if (!view.show_grid) return p;
 
     assert(snap >= 0);
 
-    for (y = floorf(p.y); y <= ceilf(p.y); y += view.grid_step) {
-        for (x = floorf(p.x); x <= ceilf(p.x); x += view.grid_step) {
+    for (y = floor(p.y); y <= ceil(p.y); y += view.grid_step) {
+        for (x = floor(p.x); x <= ceil(p.x); x += view.grid_step) {
             fpoint tmp = { x, y };
 
             if (lengthfv(subtractfp(p, tmp)) <= snap)
@@ -172,15 +172,15 @@ fpoint view_find_gridpoint_near(fpoint p, float snap)
 
 static void view_move(int x, int y, unsigned flipped)
 {
-    float x2, y2;
+    double x2, y2;
 
     if (!view.renderer) return;
 
     if (flipped) { x = -x; y = -y; }
-    x2 = 0.5f * x * x;
-    y2 = 0.5f * y * y;
-    view.camera_centre.x -= scalar_from_screen(copysignf(x2, x));
-    view.camera_centre.y += scalar_from_screen(copysignf(y2, y));
+    x2 = 0.5 * x * x;
+    y2 = 0.5 * y * y;
+    view.camera_centre.x -= scalar_from_screen(copysign(x2, x));
+    view.camera_centre.y += scalar_from_screen(copysign(y2, y));
 
     view_update();
 }
@@ -260,7 +260,7 @@ void view_render(SDL_Renderer *renderer)
         }
 
         if (view.show_grid) {
-            float x, y;
+            double x, y;
             fpoint tl, br;
             char buf[16];
 
@@ -269,15 +269,15 @@ void view_render(SDL_Renderer *renderer)
 
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-            for (y = floorf(tl.y) - view.grid_step;
-                 y <= ceilf(br.y) + view.grid_step;
+            for (y = floor(tl.y) - view.grid_step;
+                 y <= ceil(br.y) + view.grid_step;
                  y += view.grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(tl.x, y);
                 end = pointxy_to_screen(br.x, y);
 
-                if (truncf(y) == y) {
+                if (trunc(y) == y) {
                     snprintf(buf, sizeof(buf), "%.0f", y);
                     stringRGBA(renderer, start.x + 2, start.y - 10, buf, C(view_grid_coord));
 
@@ -288,20 +288,20 @@ void view_render(SDL_Renderer *renderer)
                 }
 
                 SDL_RenderDrawLine(renderer,
-                                start.x, start.y,
-                                end.x, end.y);
+                                   start.x, start.y,
+                                   end.x, end.y);
 
             }
 
-            for (x = floorf(tl.x) - view.grid_step;
-                 x <= ceilf(br.x) + view.grid_step;
+            for (x = floor(tl.x) - view.grid_step;
+                 x <= ceil(br.x) + view.grid_step;
                  x += view.grid_step) {
                 SDL_Point start, end;
 
                 start = pointxy_to_screen(x, tl.y);
                 end = pointxy_to_screen(x, br.y);
 
-                if (truncf(x) == x) {
+                if (trunc(x) == x) {
                     snprintf(buf, sizeof(buf), "%.0f", x);
                     stringRGBA(renderer, start.x + 2, start.y + 2, buf, C(view_grid_coord));
                     SDL_SetRenderDrawColor(renderer, C(view_grid_major));
@@ -311,8 +311,8 @@ void view_render(SDL_Renderer *renderer)
                 }
 
                 SDL_RenderDrawLine(renderer,
-                                start.x, start.y,
-                                end.x, end.y);
+                                   start.x, start.y,
+                                   end.x, end.y);
             }
         }
 

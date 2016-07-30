@@ -174,7 +174,7 @@ void canvas_edit_vertex(vertex_id id, const fpoint *p_abs, const fvector *p_rel)
     }
 }
 
-vertex_id canvas_find_vertex_near(fpoint p, float snap, fpoint *out)
+vertex_id canvas_find_vertex_near(fpoint p, double snap, fpoint *out)
 {
     vertex_id id;
 
@@ -235,7 +235,7 @@ static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid)
 node_id canvas_add_node(vertex_id v[3])
 {
     size_t i;
-    float winding;
+    double winding;
 
     if (v[0] == v[1] || v[1] == v[2] || v[2] == v[0])
         return ID_NONE;
@@ -398,7 +398,7 @@ void canvas_load(const char *filename)
     json_error_t error;
     struct stat stat_buf;
     const size_t flags = JSON_REJECT_DUPLICATES;
-    float scale;
+    double scale;
 
     canvas_reset();
 
@@ -417,7 +417,7 @@ void canvas_load(const char *filename)
 
     jscale = json_object_get(jcanvas, "scale");
     if (jscale) {
-        scale = 1.0f;
+        scale = 1.0;
         if (json_number_value(jscale) != camera_unitpx)
             is_data_dirty = 1;
     }

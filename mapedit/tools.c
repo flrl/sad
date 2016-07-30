@@ -79,25 +79,25 @@ static void mouse_rotsnap(fpoint a, fpoint b, fpoint *out)
 {
     const static fvector directions[8] = {
         {        1.0f,  0.0f       },   // east
-        {  INV_SQRT2f,  INV_SQRT2f },   // northeast
+        {   INV_SQRT2,  INV_SQRT2  },   // northeast
         {        0.0f,  1.0f       },   // north
-        { -INV_SQRT2f,  INV_SQRT2f },   // northwest
+        {  -INV_SQRT2,  INV_SQRT2  },   // northwest
         {       -1.0f,  0.0f       },   // west
-        { -INV_SQRT2f, -INV_SQRT2f },   // southwest
+        {  -INV_SQRT2, -INV_SQRT2  },   // southwest
         {        0.0f, -1.0f       },   // south
-        {  INV_SQRT2f, -INV_SQRT2f },   // southeast
+        {   INV_SQRT2, -INV_SQRT2  },   // southeast
     };
     const static size_t n_directions = 8;
     fvector vab = subtractfp(a, b); // FIXME ?
-    const float vab_len = lengthfv(vab);
+    const double vab_len = lengthfv(vab);
     size_t best_direction = 0;
-    float best_result = 0.0f;
+    double best_result = 0.0;
     size_t i;
 
     assert(out != NULL);
 
     for (i = 0; i < n_directions; i++) {
-        float quality = dotfv(directions[i], vab);
+        double quality = dotfv(directions[i], vab);
         if (quality < best_result) {
             best_result = quality;
             best_direction = i;
@@ -449,7 +449,7 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
     struct arcdraw_state *state = &arcdraw_state;
     fvector ab, ac;
     int s, n_sectors;
-    float r, t, tab, tac;
+    double r, t, tab, tac;
     vertex_id vid[3];
 
     assert(state->n_points == 3);
@@ -474,13 +474,13 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
         vid[0] = canvas_add_vertex(state->points[0]);
     for (s = 0; s < n_sectors; s++) {
         fpoint p1, p2;
-        p1.x = state->points[0].x + r * cosf(tab + s * t);
-        p1.y = state->points[0].y + r * sinf(tab + s * t);
+        p1.x = state->points[0].x + r * cos(tab + s * t);
+        p1.y = state->points[0].y + r * sin(tab + s * t);
         vid[1] = canvas_find_vertex_near(p1, 0, NULL);
         if (vid[1] == ID_NONE)
             vid[1] = canvas_add_vertex(p1);
-        p2.x = state->points[0].x + r * cosf(tab + (s + 1) * t);
-        p2.y = state->points[0].y + r * sinf(tab + (s + 1) * t);
+        p2.x = state->points[0].x + r * cos(tab + (s + 1) * t);
+        p2.y = state->points[0].y + r * sin(tab + (s + 1) * t);
         vid[2] = canvas_find_vertex_near(p2, 0, NULL);
         if (vid[2] == ID_NONE)
             vid[2] = canvas_add_vertex(p2);
@@ -628,9 +628,9 @@ static void arcdraw_render(SDL_Renderer *renderer)
         arcRGBA(renderer,
                 points[0].x,
                 points[0].y,
-                lroundf(lengthp(points[0], points[1])),
-                atan2(ab.y, ab.x) * 180 / M_PI,
-                atan2(ac.y, ac.x) * 180 / M_PI,
+                lround(lengthp(points[0], points[1])),
+                lround(atan2(ab.y, ab.x) * 180 / M_PI),
+                lround(atan2(ac.y, ac.x) * 180 / M_PI),
                 C(tool_draw0));
     }
 }
@@ -674,7 +674,7 @@ static void rectdraw_next_point(fpoint p)
         rp = subtractfp(p, r);
         c = addfp(b, rp);
         d = addfp(a, rp);
-        e = addfp(a, scalefv(subtractfp(c, a), 0.5f));
+        e = addfp(a, scalefv(subtractfp(c, a), 0.5));
 
         vert_a = canvas_find_vertex_near(a, 0, NULL);
         if (vert_a == ID_NONE) vert_a = canvas_add_vertex(a);
