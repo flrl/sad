@@ -26,7 +26,7 @@ struct node {
 void canvas_init(const char *filename);
 void canvas_destroy(void);
 
-node_id canvas_add_node(vertex_id v[3]);
+node_id canvas_add_node(vertex_id a, vertex_id b, vertex_id c);
 void canvas_delete_node(node_id id);
 node_id canvas_find_node_at(fpoint p);
 const struct node *canvas_node(node_id id);

@@ -232,31 +232,36 @@ static void vertex_del_nodeid(struct vertex *vertex, node_id nodeid)
         vertex->nodes[i] = ID_NONE;
 }
 
-node_id canvas_add_node(vertex_id v[3])
+node_id canvas_add_node(vertex_id a, vertex_id b, vertex_id c)
 {
-    size_t i;
     double winding;
 
-    if (v[0] == v[1] || v[1] == v[2] || v[2] == v[0])
+    if (a == b || b == c || c == a)
         return ID_NONE;
 
     nodes_ensure(1);
     node_id id = nodes_count++;
     nodes[id].id = id;
 
-    winding = crossfv(subtractfp(verts[v[1]].p, verts[v[0]].p),
-                      subtractfp(verts[v[2]].p, verts[v[0]].p));
+    winding = crossfv(subtractfp(verts[b].p, verts[a].p),
+                      subtractfp(verts[c].p, verts[a].p));
     if (winding < 0) {
-        vertex_id tmp = v[1];
-        v[1] = v[2];
-        v[2] = tmp;
+        vertex_id tmp = b;
+        b = c;
+        c = tmp;
     }
 
-    for (i = 0; i < 3; i++) {
-        assert(verts[v[i]].id == v[i]);
-        nodes[id].v[i] = v[i];
-        vertex_add_nodeid(&verts[v[i]], id);
-    }
+    assert(verts[a].id == a);
+    assert(verts[b].id == b);
+    assert(verts[c].id == c);
+
+    nodes[id].v[0] = a;
+    nodes[id].v[1] = b;
+    nodes[id].v[2] = c;
+
+    vertex_add_nodeid(&verts[a], id);
+    vertex_add_nodeid(&verts[b], id);
+    vertex_add_nodeid(&verts[c], id);
 
     canvas_dirty();
     return id;

@@ -49,7 +49,7 @@ static void nodedraw_next_point(fpoint p)
             if (vid[i] == ID_NONE)
                 vid[i] = canvas_add_vertex(state->points[i]);
         }
-        canvas_add_node(vid);
+        canvas_add_node(vid[0], vid[1], vid[2]);
         nodedraw_reset();
     }
     else {
@@ -450,7 +450,7 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
     fvector ab, ac;
     int s, n_sectors;
     double r, t, tab, tac;
-    vertex_id vid[3];
+    vertex_id a, b, c;
 
     assert(state->n_points == 3);
 
@@ -469,23 +469,23 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
     if (t < 0) t += 2 * M_PI;
     t /= n_sectors;
 
-    vid[0] = canvas_find_vertex_near(state->points[0], 0, NULL);
-    if (vid[0] == ID_NONE)
-        vid[0] = canvas_add_vertex(state->points[0]);
+    a = canvas_find_vertex_near(state->points[0], 0, NULL);
+    if (a == ID_NONE)
+        a = canvas_add_vertex(state->points[0]);
     for (s = 0; s < n_sectors; s++) {
         fpoint p1, p2;
         p1.x = state->points[0].x + r * cos(tab + s * t);
         p1.y = state->points[0].y + r * sin(tab + s * t);
-        vid[1] = canvas_find_vertex_near(p1, 0, NULL);
-        if (vid[1] == ID_NONE)
-            vid[1] = canvas_add_vertex(p1);
+        b = canvas_find_vertex_near(p1, 0, NULL);
+        if (b == ID_NONE)
+            b = canvas_add_vertex(p1);
         p2.x = state->points[0].x + r * cos(tab + (s + 1) * t);
         p2.y = state->points[0].y + r * sin(tab + (s + 1) * t);
-        vid[2] = canvas_find_vertex_near(p2, 0, NULL);
-        if (vid[2] == ID_NONE)
-            vid[2] = canvas_add_vertex(p2);
+        c = canvas_find_vertex_near(p2, 0, NULL);
+        if (c == ID_NONE)
+            c = canvas_add_vertex(p2);
 
-        canvas_add_node(vid);
+        canvas_add_node(a, b, c);
     }
 
     arcdraw_reset();
@@ -668,7 +668,6 @@ static void rectdraw_next_point(fpoint p)
         fpoint c, d, e, r;
         fvector rp;
         vertex_id vert_a, vert_b, vert_c, vert_d, vert_e;
-        vertex_id vid[3];
 
         r = addfp(a, projectfv(subtractfp(p, a), subtractfp(b, a)));
         rp = subtractfp(p, r);
@@ -691,21 +690,10 @@ static void rectdraw_next_point(fpoint p)
         vert_e = canvas_find_vertex_near(e, 0, NULL);
         if (vert_e == ID_NONE) vert_e = canvas_add_vertex(e);
 
-        // abe
-        vid[0] = vert_a; vid[1] = vert_b; vid[2] = vert_e;
-        canvas_add_node(vid);
-
-        // bce
-        vid[0] = vert_b; vid[1] = vert_c; vid[2] = vert_e;
-        canvas_add_node(vid);
-
-        // cde
-        vid[0] = vert_c; vid[1] = vert_d; vid[2] = vert_e;
-        canvas_add_node(vid);
-
-        // dae
-        vid[0] = vert_d; vid[1] = vert_a; vid[2] = vert_e;
-        canvas_add_node(vid);
+        canvas_add_node(vert_a, vert_b, vert_e);
+        canvas_add_node(vert_b, vert_c, vert_e);
+        canvas_add_node(vert_c, vert_d, vert_e);
+        canvas_add_node(vert_d, vert_a, vert_e);
 
         rectdraw_reset();
     }
