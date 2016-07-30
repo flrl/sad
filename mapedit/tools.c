@@ -248,6 +248,18 @@ static void vertmove_edit_vertex(const fpoint *p_abs, const SDL_Point *p_rel)
     }
 }
 
+static void vertmove_abort(fpoint p)
+{
+    struct vertmove_state *state = &vertmove_state;
+
+    if (state->selected == ID_NONE) return;
+
+    vertmove_edit_vertex(&state->orig_point, NULL);
+    vertmove_reset();
+
+    state->hovered = canvas_find_vertex_near(p, scalar_from_screen(TOOL_SNAP), NULL);
+}
+
 static int vertmove_handle_event(const SDL_Event *e)
 {
     struct vertmove_state *state = &vertmove_state;
@@ -267,11 +279,7 @@ static int vertmove_handle_event(const SDL_Event *e)
         case SDL_KEYUP:
             if (state->selected == ID_NONE) break;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
-                vertmove_edit_vertex(&state->orig_point, NULL);
-                state->hovered = canvas_find_vertex_near(mouse,
-                                                         scalar_from_screen(TOOL_SNAP),
-                                                         NULL);
-                state->selected = ID_NONE;
+                vertmove_abort(mouse);
                 break;
             }
             if (e->key.keysym.sym == SDLK_RETURN) {
@@ -292,13 +300,6 @@ static int vertmove_handle_event(const SDL_Event *e)
             if (arrows.x == 0 && arrows.y == 0) break;
             vertmove_edit_vertex(NULL, &arrows);
             break;
-        case SDL_MOUSEBUTTONDOWN:
-            if (e->button.button != SDL_BUTTON_LEFT) break;
-            if (state->hovered == ID_NONE) break;
-            state->selected = state->hovered;
-            state->hovered = ID_NONE;
-            state->orig_point = canvas_vertex(state->selected)->p;
-            break;
         case SDL_MOUSEMOTION:
             if (state->selected == ID_NONE) {
                 state->hovered = canvas_find_vertex_near(mouse,
@@ -311,12 +312,23 @@ static int vertmove_handle_event(const SDL_Event *e)
             }
             break;
         case SDL_MOUSEBUTTONUP:
-            if (state->selected == ID_NONE) break;
-            if (e->button.button != SDL_BUTTON_LEFT) break;
-            mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
-            vertmove_edit_vertex(&mouse, NULL);
-            state->hovered = state->selected;
-            state->selected = ID_NONE;
+            if (e->button.button != SDL_BUTTON_LEFT) {
+                vertmove_abort(mouse);
+                break;
+            }
+            if (state->selected == ID_NONE) {
+                if (state->hovered == ID_NONE) break;
+
+                state->selected = state->hovered;
+                state->hovered = ID_NONE;
+                state->orig_point = canvas_vertex(state->selected)->p;
+            }
+            else {
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
+                vertmove_edit_vertex(&mouse, NULL);
+                state->hovered = state->selected;
+                state->selected = ID_NONE;
+            }
             break;
     }
 
