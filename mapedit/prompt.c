@@ -17,6 +17,7 @@ static struct prompt_state {
     char *query;
     char *input;
     SDL_Texture *texture;
+    SDL_Rect fillrect;
     SDL_Rect dstrect;
     SDL_Rect srcrect;
     prompt_ok_cb *ok_cb;
@@ -118,7 +119,7 @@ int prompt_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             mouse.x = e->button.x;
             mouse.y = e->button.y;
-            if (!SDL_PointInRect(&mouse, &state->dstrect))
+            if (!SDL_PointInRect(&mouse, &state->fillrect))
                 done_cancel();
             handled = 1;
             break;
@@ -172,14 +173,15 @@ void prompt_render(SDL_Renderer *renderer)
         free(tmp);
 
         if (surface) {
-            SDL_Rect viewport;
+            SDL_RenderGetViewport(renderer, &state->fillrect);
 
-            SDL_RenderGetViewport(renderer, &viewport);
+            state->fillrect.y = state->fillrect.h - surface->h - 4;
+            state->fillrect.h = 4 + surface->h;
 
             /* crop to window size, allowing 2 pixels padding each end */
-            if (surface->w + 4 > viewport.w) {
-                state->srcrect.x = surface->w + 4 - viewport.w;
-                state->srcrect.w = viewport.w - 4;
+            if (surface->w + 4 > state->fillrect.w) {
+                state->srcrect.x = surface->w + 4 - state->fillrect.w;
+                state->srcrect.w = state->fillrect.w - 4;
             }
             else {
                 state->srcrect.x = 0;
@@ -189,7 +191,7 @@ void prompt_render(SDL_Renderer *renderer)
             state->srcrect.h = surface->h;
 
             state->dstrect.x = 2;
-            state->dstrect.y = viewport.h - surface->h - 2;
+            state->dstrect.y = state->fillrect.y + 2;
             state->dstrect.w = state->srcrect.w;
             state->dstrect.h = state->srcrect.h;
 
@@ -201,14 +203,8 @@ void prompt_render(SDL_Renderer *renderer)
     }
 
     if (state->texture) {
-        SDL_Rect bgspace;
-
-        SDL_RenderGetViewport(renderer, &bgspace);
-        bgspace.y = state->dstrect.y - 2;
-        bgspace.h = state->dstrect.h + 4;
-
         SDL_SetRenderDrawColor(renderer, C(prompt_fill));
-        SDL_RenderFillRect(renderer, &bgspace);
+        SDL_RenderFillRect(renderer, &state->fillrect);
 
         SDL_RenderCopy(renderer, state->texture, &state->srcrect, &state->dstrect);
 
