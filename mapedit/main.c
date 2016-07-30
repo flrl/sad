@@ -113,6 +113,11 @@ static void handle_events(void)
                 tool = &tools[TOOL_NODEDRAW];
                 tool->select();
                 break;
+            case SDLK_r:
+                tool->deselect();
+                tool = &tools[TOOL_RECTDRAW];
+                tool->select();
+                break;
             case SDLK_s:
                 if (!filename || (e.key.keysym.mod & KMOD_SHIFT))
                     prompt("save as: ", filename, &filename_ok, NULL, NULL);

@@ -635,9 +635,204 @@ static void arcdraw_render(SDL_Renderer *renderer)
     }
 }
 
+/*** rectdraw ***/
+static struct rectdraw_state {
+    fpoint points[3];
+    size_t n_points;
+} rectdraw_state;
+
+static void rectdraw_reset(void)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+
+    memset(state, 0, sizeof *state);
+}
+
+static void rectdraw_start(fpoint p)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+
+    assert(state->n_points == 0);
+
+    state->points[state->n_points++] = p;
+}
+
+static void rectdraw_next_point(fpoint p)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+
+    assert(state->n_points > 0);
+
+    if (state->n_points >= 3) {
+        const fpoint a = state->points[0], b = state->points[1], p = state->points[2];
+        fpoint c, d, e, r;
+        fvector rp;
+        vertex_id vert_a, vert_b, vert_c, vert_d, vert_e;
+        vertex_id vid[3];
+
+        r = addfp(a, projectfv(subtractfp(p, a), subtractfp(b, a)));
+        rp = subtractfp(p, r);
+        c = addfp(b, rp);
+        d = addfp(a, rp);
+        e = addfp(a, scalefv(subtractfp(c, a), 0.5f));
+
+        vert_a = canvas_find_vertex_near(a, 0, NULL);
+        if (vert_a == ID_NONE) vert_a = canvas_add_vertex(a);
+
+        vert_b = canvas_find_vertex_near(b, 0, NULL);
+        if (vert_b == ID_NONE) vert_b = canvas_add_vertex(b);
+
+        vert_c = canvas_find_vertex_near(c, 0, NULL);
+        if (vert_c == ID_NONE) vert_c = canvas_add_vertex(c);
+
+        vert_d = canvas_find_vertex_near(d, 0, NULL);
+        if (vert_d == ID_NONE) vert_d = canvas_add_vertex(d);
+
+        vert_e = canvas_find_vertex_near(e, 0, NULL);
+        if (vert_e == ID_NONE) vert_e = canvas_add_vertex(e);
+
+        // abe
+        vid[0] = vert_a; vid[1] = vert_b; vid[2] = vert_e;
+        canvas_add_node(vid);
+
+        // bce
+        vid[0] = vert_b; vid[1] = vert_c; vid[2] = vert_e;
+        canvas_add_node(vid);
+
+        // cde
+        vid[0] = vert_c; vid[1] = vert_d; vid[2] = vert_e;
+        canvas_add_node(vid);
+
+        // dae
+        vid[0] = vert_d; vid[1] = vert_a; vid[2] = vert_e;
+        canvas_add_node(vid);
+
+        rectdraw_reset();
+    }
+    else {
+        state->points[state->n_points++] = p;
+    }
+}
+
+static void rectdraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+
+    assert(state->n_points > 0);
+
+    if (state->n_points > 3)
+        return;
+
+    if (p_abs) {
+        state->points[state->n_points - 1] = *p_abs;
+    }
+    else if (p_rel) {
+        state->points[state->n_points - 1] = addfp(state->points[state->n_points - 1],
+                                                   vector_from_screen(*p_rel));
+    }
+}
+
+static int rectdraw_handle_event(const SDL_Event *e)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+    SDL_Point arrows, tmp;
+    fpoint mouse;
+
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = point_from_screen(tmp);
+
+    switch (e->type) {
+        case SDL_KEYUP:
+            if (state->n_points == 0) break;
+            if (e->key.keysym.sym == SDLK_ESCAPE)
+                rectdraw_reset();
+            else if (e->key.keysym.sym == SDLK_RETURN)
+                rectdraw_next_point(mouse);
+            break;
+        case SDL_KEYDOWN:
+            if (state->n_points == 0) break;
+            arrows.x = arrows.y = 0;
+            if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
+            else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
+            else if (e->key.keysym.sym == SDLK_LEFT) arrows.x --;
+            else if (e->key.keysym.sym == SDLK_RIGHT) arrows.x ++;
+            else break;
+            rectdraw_edit_point(NULL, &arrows);
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (e->button.button != SDL_BUTTON_LEFT) break;
+            if (state->n_points > 0) break;
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
+            rectdraw_start(mouse);
+            break;
+        case SDL_MOUSEMOTION:
+            if (state->n_points == 0) break;
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
+            rectdraw_edit_point(&mouse, NULL);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (e->button.button != SDL_BUTTON_LEFT) {
+                rectdraw_reset();
+                break;
+            }
+            if (state->n_points == 0) break;
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
+            rectdraw_next_point(mouse);
+            break;
+    }
+
+    return 0;
+}
+
+static void rectdraw_render(SDL_Renderer *renderer)
+{
+    struct rectdraw_state *state = &rectdraw_state;
+    SDL_Point points[5] = {
+        point_to_screen(state->points[0]),
+        point_to_screen(state->points[1]),
+        { 0, 0 },
+        { 0, 0 },
+        point_to_screen(state->points[0]),
+    };
+
+    if (state->n_points == 0) return;
+
+    if (state->n_points == 2) {
+        SDL_SetRenderDrawColor(renderer, C(tool_draw0));
+        SDL_RenderDrawLine(renderer,
+                           points[0].x, points[0].y,
+                           points[1].x, points[1].y);
+    }
+    else if (state->n_points == 3) {
+        const fpoint a = state->points[0], b = state->points[1], p = state->points[2];
+        fpoint c, d, r;
+        fvector rp;
+        SDL_Point screen_p;
+
+        r = addfp(a, projectfv(subtractfp(p, a), subtractfp(b, a)));
+        rp = subtractfp(p, r);
+        c = addfp(b, rp);
+        d = addfp(a, rp);
+
+        points[2] = point_to_screen(c);
+        points[3] = point_to_screen(d);
+
+        SDL_SetRenderDrawColor(renderer, C(tool_draw1));
+        SDL_RenderDrawLines(renderer, points, 5);
+
+        SDL_SetRenderDrawColor(renderer, C(tool_draw0));
+        screen_p = point_to_screen(p);
+        SDL_RenderDrawPoint(renderer, screen_p.x, screen_p.y);
+    }
+}
+
 struct tool tools[] = {
     { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render, "draw nodes" },
     { &vertmove_select, &vertmove_reset, &vertmove_handle_event, &vertmove_render, "move vertices" },
     { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render, "delete nodes" },
     { &arcdraw_reset, &arcdraw_reset, &arcdraw_handle_event, &arcdraw_render, "draw arcs" },
+    { &rectdraw_reset, &rectdraw_reset, &rectdraw_handle_event, &rectdraw_render, "draw rectangles" },
 };

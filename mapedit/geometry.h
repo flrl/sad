@@ -30,4 +30,5 @@ int same_sidefp(fpoint p1, fpoint p2, fpoint a, fpoint b);
 fpoint addfp(fpoint p, fvector v);
 fvector subtractfp(fpoint a, fpoint b);
 fvector scalefv(fvector v, float l);
+fvector projectfv(fvector a, fvector b);
 #endif

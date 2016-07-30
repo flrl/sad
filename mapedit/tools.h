@@ -8,6 +8,7 @@ enum tool_id {
     TOOL_VERTMOVE,
     TOOL_NODEDEL,
     TOOL_ARCDRAW,
+    TOOL_RECTDRAW,
 
     TOOL_LASTTOOL, /* keep last */
 };

@@ -87,3 +87,12 @@ fvector scalefv(fvector v, float l)
     fvector result = { v.x * l, v.y * l };
     return result;
 }
+
+fvector projectfv(fvector a, fvector b)
+{
+    fvector result = { 0.0f, 0.0f };
+    if (length2fv(a) == 0.0f || length2fv(b) == 0.0f)
+        return result;
+    result = scalefv(b, dotfv(a, b) / dotfv(b, b));
+    return result;
+}
