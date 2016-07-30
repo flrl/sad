@@ -144,12 +144,14 @@ static int nodedraw_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             nodedraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             nodedraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
@@ -157,7 +159,8 @@ static int nodedraw_handle_event(const SDL_Event *e)
                 nodedraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             nodedraw_next_point(mouse);
             break;
     }
@@ -297,16 +300,20 @@ static int vertmove_handle_event(const SDL_Event *e)
             state->orig_point = canvas_vertex(state->selected)->p;
             break;
         case SDL_MOUSEMOTION:
-            if (state->selected == ID_NONE)
+            if (state->selected == ID_NONE) {
                 state->hovered = canvas_find_vertex_near(mouse,
                                                          scalar_from_screen(TOOL_SNAP),
                                                          NULL);
-            else
+            }
+            else {
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
                 vertmove_edit_vertex(&mouse, NULL);
+            }
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->selected == ID_NONE) break;
             if (e->button.button != SDL_BUTTON_LEFT) break;
+            mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             vertmove_edit_vertex(&mouse, NULL);
             state->hovered = state->selected;
             state->selected = ID_NONE;
@@ -550,13 +557,15 @@ static int arcdraw_handle_event(const SDL_Event *e)
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
             if (state->in_prompt) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             arcdraw_start(mouse);
             break;
         case SDL_MOUSEMOTION:
             if (state->n_points == 0)  break;
             if (state->in_prompt) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             arcdraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
@@ -565,7 +574,8 @@ static int arcdraw_handle_event(const SDL_Event *e)
                 arcdraw_reset();
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
-            canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse);
+            if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
+                mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             arcdraw_next_point(mouse);
             break;
     }

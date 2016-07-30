@@ -15,6 +15,8 @@ void view_update(void);
 void view_zoom_in(void);
 void view_zoom_out(void);
 
+fpoint view_find_gridpoint_near(fpoint p, float snap);
+
 int scalar_to_screen(float f);
 float scalar_from_screen(int i);
 

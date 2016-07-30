@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 
@@ -147,6 +149,25 @@ void view_zoom_out(void)
         view.zoom --;
         view_update();
     }
+}
+
+fpoint view_find_gridpoint_near(fpoint p, float snap)
+{
+    float x, y;
+    if (!view.show_grid) return p;
+
+    assert(snap >= 0);
+
+    for (y = floorf(p.y); y <= ceilf(p.y); y += view.grid_step) {
+        for (x = floorf(p.x); x <= ceilf(p.x); x += view.grid_step) {
+            fpoint tmp = { x, y };
+
+            if (lengthfv(subtractfp(p, tmp)) <= snap)
+                return tmp;
+        }
+    }
+
+    return p;
 }
 
 static void view_move(int x, int y, unsigned flipped)
