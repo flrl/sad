@@ -24,6 +24,7 @@ static struct {
     fpoint camera_centre;
     float grid_step;
     int show_grid;
+    int show_mouse_pos;
     unsigned zoom;
     int is_dirty;
 } view;
@@ -43,6 +44,7 @@ void view_init(SDL_Renderer *renderer)
     view.zoom = view_default_zoom;
     view.show_grid = 1;
     view.grid_step = 1.0f;
+    view.show_mouse_pos = 1;
 
     view_update();
 }
@@ -122,6 +124,11 @@ void view_toggle_grid(void)
     view_update();
 }
 
+void view_toggle_mouse_pos(void)
+{
+    view.show_mouse_pos = !view.show_mouse_pos;
+}
+
 void view_zoom_in(void)
 {
     if (!view.renderer) return;
@@ -177,7 +184,10 @@ int view_handle_event(const SDL_Event *e)
                 return 1;
             }
             else if (e->key.keysym.sym == SDLK_g) {
-                view_toggle_grid();
+                if ((SDL_GetModState() & KMOD_SHIFT))
+                    view_toggle_mouse_pos();
+                else
+                    view_toggle_grid();
                 return 1;
             }
             break;
@@ -188,14 +198,11 @@ int view_handle_event(const SDL_Event *e)
 
 void view_render(SDL_Renderer *renderer)
 {
-    if (view.is_dirty || !view.texture) {
-        SDL_Rect viewport;
-        node_id i;
-        fpoint tl, br;
-        float x, y;
-        char buf[16];
+    SDL_Rect viewport;
+    SDL_RenderGetViewport(renderer, &viewport);
 
-        SDL_RenderGetViewport(renderer, &viewport);
+    if (view.is_dirty || !view.texture) {
+        node_id i;
 
         if (view.texture) SDL_DestroyTexture(view.texture);
 
@@ -232,6 +239,10 @@ void view_render(SDL_Renderer *renderer)
         }
 
         if (view.show_grid) {
+            float x, y;
+            fpoint tl, br;
+            char buf[16];
+
             tl = point_from_screenxy(viewport.x, viewport.y);
             br = point_from_screenxy(viewport.x + viewport.w, viewport.y + viewport.h);
 
@@ -290,4 +301,18 @@ void view_render(SDL_Renderer *renderer)
 
     if (view.texture)
         SDL_RenderCopy(renderer, view.texture, NULL, NULL);
+
+    if (view.show_mouse_pos) {
+        int x, y, n;
+        fpoint mouse;
+        char buf[16];
+
+        SDL_GetMouseState(&x, &y);
+        mouse = point_from_screenxy(x, y);
+
+        snprintf(buf, sizeof(buf), "%.6f%n", mouse.x, &n);
+        stringRGBA(renderer, viewport.w - (n * 8), viewport.h - 16, buf, C(view_mouse_pos));
+        snprintf(buf, sizeof(buf), "%.6f%n", mouse.y, &n);
+        stringRGBA(renderer, viewport.w - (n * 8), viewport.h - 8, buf, C(view_mouse_pos));
+    }
 }
