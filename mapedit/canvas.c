@@ -417,7 +417,9 @@ void canvas_load(const char *filename)
 
     jscale = json_object_get(jcanvas, "scale");
     if (jscale) {
-        scale = json_number_value(jscale) / camera_unitpx;
+        scale = 1.0f;
+        if (json_number_value(jscale) != camera_unitpx)
+            is_data_dirty = 1;
     }
     else {
         scale = 1 / camera_unitpx;
