@@ -8,19 +8,17 @@
 
 #define DC_PBEFORE(dc)  ((dc)->buffer)
 #define DC_PGAP(dc)     (&(dc)->buffer[(dc)->len_before])
-#define DC_PAFTER(dc)   (&(dc)->buffer[(dc)->size - ((dc)->len_after + 1)])
+#define DC_PAFTER(dc)   (&(dc)->buffer[(dc)->size - (dc)->len_after])
 
 #ifndef NDEBUG
 #define DC_SANITY(_dc)                                                  \
 do {                                                                    \
     const dcstring *__dc = (_dc);                                       \
     assert((   __dc->buffer == NULL && __dc->size == 0                  \
-            && __dc->len_before == 0 && __dc->len_gap == 0              \
-            && __dc->len_after == 0)                                    \
+            && __dc->len_before == 0 && __dc->len_after == 0)           \
            ||                                                           \
-           (   __dc->buffer != NULL                                     \
-            && __dc->len_before + __dc->len_gap + __dc->len_after + 1   \
-               == __dc->size));                                         \
+           (   __dc->buffer != NULL && __dc->size > 0                   \
+            && __dc->len_before + __dc->len_after <= __dc->size));      \
 } while (0)
 #else
 #define DC_SANITY(_dc) ((void)(0))
@@ -30,9 +28,15 @@ struct s_dcstring {
     char *buffer;
     size_t size;
     size_t len_before;
-    size_t len_gap;
     size_t len_after;
 };
+
+#define dcstring_fillgap(_dc)                                           \
+do {                                                                    \
+    dcstring *__dc = (_dc);                                             \
+    memset(DC_PGAP(__dc), 0,                                            \
+            __dc->size - (__dc->len_before + __dc->len_after));         \
+} while (0)
 
 static int dcstring_fit(dcstring *dc, size_t len)
 {
@@ -45,35 +49,33 @@ static int dcstring_fit(dcstring *dc, size_t len)
         dc->size = DCSTRING_ALLOC;
         memset(dc->buffer, 0, dc->size);
         dc->len_before = dc->len_after = 0;
-        dc->len_gap = dc->size - 1;
         return 0;
     }
-    else if (dc->len_gap > len) {
+    else if (dc->size - dcstring_len(dc) > len) {
         /* already enough space */
         return 0;
     }
     else {
-        size_t incr = DCSTRING_ALLOC;
+        size_t new_size = dc->size + DCSTRING_ALLOC;
         char *tmp;
 
-        while (dc->len_gap + incr < len)
-            incr += DCSTRING_ALLOC;
+        while (new_size - dcstring_len(dc) < len)
+            new_size += DCSTRING_ALLOC;
 
-        tmp = malloc(dc->size + incr);
+        tmp = malloc(new_size);
         if (!tmp) return -1;
 
-        memset(tmp, 0, dc->size + incr);
+        memset(tmp, 0, new_size);
         if (dc->len_before)
             memcpy(tmp, dc->buffer, dc->len_before);
         if (dc->len_after)
-            memcpy(&tmp[(dc->size + incr) - (dc->len_after + 1)],
+            memcpy(&tmp[new_size - dc->len_after],
                    DC_PAFTER(dc),
                    dc->len_after);
 
         free(dc->buffer);
         dc->buffer = tmp;
-        dc->size += incr;
-        dc->len_gap += incr;
+        dc->size = new_size;
 
         return 0;
     }
@@ -118,14 +120,13 @@ dcstring *dcstring_clone(const dcstring *dc)
 
     clone->size = dc->size;
     clone->len_before = dc->len_before;
-    clone->len_gap = dc->len_gap;
     clone->len_after = dc->len_after;
 
     if (dc->len_before)
         memcpy(DC_PBEFORE(clone), DC_PBEFORE(dc), dc->len_before);
     if (dc->len_after)
         memcpy(DC_PAFTER(clone), DC_PAFTER(dc), dc->len_after);
-    memset(DC_PGAP(clone), 0, dc->len_gap);
+    dcstring_fillgap(clone);
 
     DC_SANITY(clone);
     return clone;
@@ -227,7 +228,6 @@ ptrdiff_t dcstring_ndelete(dcstring *dc, ptrdiff_t count)
 
         memset(DC_PAFTER(dc), 0, count);
         dc->len_after -= count;
-        dc->len_gap += count;
         return count;
     }
     else if (count < 0) {
@@ -236,7 +236,6 @@ ptrdiff_t dcstring_ndelete(dcstring *dc, ptrdiff_t count)
 
         memset(DC_PGAP(dc) - count, 0, count);
         dc->len_before -= count;
-        dc->len_gap += count;
         return count;
     }
     else {
@@ -298,7 +297,7 @@ ptrdiff_t dcstring_cursor_tostart(dcstring *dc)
     memcpy(DC_PAFTER(dc) - dc->len_before, DC_PBEFORE(dc), dc->len_before);
     dc->len_after += dc->len_before;
     dc->len_before = 0;
-    memset(DC_PGAP(dc), 0, dc->len_gap);
+    dcstring_fillgap(dc);
 
     return moved;
 }
@@ -312,7 +311,7 @@ ptrdiff_t dcstring_cursor_toend(dcstring *dc)
     memcpy(DC_PGAP(dc), DC_PAFTER(dc), dc->len_after);
     dc->len_before += dc->len_after;
     dc->len_after = 0;
-    memset(DC_PGAP(dc), 0, dc->len_gap);
+    dcstring_fillgap(dc);
 
     return moved;
 }
