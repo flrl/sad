@@ -3,6 +3,8 @@
 
 #include "mapedit/canvas.h"
 
+#define ID_ANY (ID_NONE) /* for selection_has_...() */
+
 void selection_clear_nodes(void);
 int selection_has_node(node_id id);
 void selection_add_node(node_id id);

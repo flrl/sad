@@ -14,6 +14,14 @@ void selection_clear_nodes(void)
 
 int selection_has_node(node_id id)
 {
+    if (id == ID_ANY) {
+        size_t i;
+        for (i = 0; i < sizeof selected_nodes / sizeof selected_nodes[0]; i++) {
+            if (selected_nodes[i] != 0)
+                return 1;
+        }
+        return 0;
+    }
     return ((selected_nodes[id >> 3] >> (id & 0x07)) & 0x01);
 }
 
@@ -40,6 +48,14 @@ void selection_clear_vertices(void)
 
 int selection_has_vertex(vertex_id id)
 {
+    if (id == ID_ANY) {
+        size_t i;
+        for (i = 0; i < sizeof selected_verts / sizeof selected_verts[0]; i++) {
+            if (selected_verts[i] != 0)
+                return 1;
+        }
+        return 0;
+    }
     return ((selected_verts[id >> 3] >> (id & 0x07)) & 0x01);
 }
 
