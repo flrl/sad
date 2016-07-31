@@ -9,6 +9,7 @@ const SDL_Color view_grid_coord = {   0, 255, 255,  64 };
 const SDL_Color view_grid_major = {   0, 255, 255,  48 };
 const SDL_Color view_grid_minor = {   0, 255, 255,  24 };
 const SDL_Color view_mouse_pos  = {   0, 255, 255,  64 };
+const SDL_Color view_selected   = {   0, 255,   0, 255 };
 
 const SDL_Color tool_draw0      = { 255,   0,   0, 255 };
 const SDL_Color tool_draw1      = { 255, 255,   0, 255 };

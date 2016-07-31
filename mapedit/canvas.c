@@ -11,6 +11,7 @@
 #include "mapedit/util.h"
 #include "mapedit/view.h"
 
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 struct vertex *verts = NULL;
@@ -191,6 +192,24 @@ vertex_id canvas_find_vertex_near(fpoint p, double snap, fpoint *out)
     }
 
     return ID_NONE;
+}
+
+void canvas_find_vertices_within(fpoint a, fpoint b, canvas_find_vertex_cb *cb, void *rock)
+{
+    fpoint tl = { MIN(a.x, b.x), MIN(a.y, b.y) };
+    fpoint br = { MAX(a.x, b.x), MAX(a.y, b.y) };
+    vertex_id id;
+
+    if (!cb) return;
+
+    for (id = 0; id < verts_count; id++) {
+        const struct vertex *v = &verts[id];
+        if (v->id == ID_NONE) continue;
+        if (v->p.x < tl.x || v->p.x > br.x) continue;
+        if (v->p.y < tl.y || v->p.y > br.y) continue;
+
+        cb(v->id, rock);
+    }
 }
 
 const struct vertex *canvas_vertex(vertex_id id)

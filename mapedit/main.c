@@ -129,6 +129,11 @@ static void handle_events(void)
                 else
                     canvas_save(filename);
                 break;
+            case SDLK_v:
+                tool->deselect();
+                tool = &tools[TOOL_VERTSEL];
+                tool->select();
+                break;
         }
     }
 }

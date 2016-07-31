@@ -14,6 +14,7 @@ extern const SDL_Color view_grid_coord;
 extern const SDL_Color view_grid_major;
 extern const SDL_Color view_grid_minor;
 extern const SDL_Color view_mouse_pos;
+extern const SDL_Color view_selected;
 
 extern const SDL_Color tool_draw0;
 extern const SDL_Color tool_draw1;

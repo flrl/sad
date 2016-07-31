@@ -8,6 +8,7 @@
 #include "mapedit/colour.h"
 #include "mapedit/geometry.h"
 #include "mapedit/prompt.h"
+#include "mapedit/selection.h"
 #include "mapedit/tools.h"
 #include "mapedit/view.h"
 
@@ -840,10 +841,115 @@ static void rectdraw_render(SDL_Renderer *renderer)
     }
 }
 
+/*** vertsel ***/
+static struct vertsel_state {
+    fpoint start;
+    fpoint finish;
+    int selecting;
+} vertsel_state;
+
+void vertsel_reset(void)
+{
+    struct vertsel_state *state = &vertsel_state;
+
+    memset(state, 0, sizeof *state);
+}
+
+static void vertsel_find_vert_cb(vertex_id id, void *rock)
+{
+    int do_deselect = *(int *) rock;
+
+    if (do_deselect)
+        selection_remove_vertex(id);
+    else
+        selection_add_vertex(id);
+}
+
+int vertsel_handle_event(const SDL_Event *e)
+{
+    struct vertsel_state *state = &vertsel_state;
+    SDL_Point tmp;
+    fpoint mouse;
+    int handled = 0;
+    int do_deselect = (0 != (SDL_GetModState() & KMOD_SHIFT));
+
+    SDL_GetMouseState(&tmp.x, &tmp.y);
+    mouse = point_from_screen(tmp);
+
+    switch (e->type) {
+        case SDL_KEYUP:
+            if (!state->selecting) break;
+            handled = 1;
+            if (e->key.keysym.sym == SDLK_ESCAPE)
+                vertsel_reset();
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (state->selecting) break;
+            handled = 1;
+            state->selecting = 1;
+            state->start = state->finish = mouse;
+            break;
+        case SDL_MOUSEMOTION:
+            if (!state->selecting) break;
+            state->finish = mouse;
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (e->button.button != SDL_BUTTON_LEFT) {
+                handled = 1;
+                selection_clear_vertices();
+                view_update();
+                vertsel_reset();
+                break;
+            }
+            if (!state->selecting) break;
+            handled = 1;
+            canvas_find_vertices_within(state->start, state->finish,
+                                        &vertsel_find_vert_cb, &do_deselect);
+            view_update();
+            vertsel_reset();
+            break;
+    }
+
+    return handled;
+}
+
+void vertsel_render(SDL_Renderer *renderer)
+{
+    struct vertsel_state *state = &vertsel_state;
+    if (!state->selecting) return;
+
+    SDL_Point a = point_to_screen(state->start);
+    SDL_Point b = point_to_screen(state->finish);
+
+    SDL_Point points[5] = {
+        { a.x, a.y },
+        { b.x, a.y },
+        { b.x, b.y },
+        { a.x, b.y },
+        { a.x, a.y },
+    };
+
+    SDL_SetRenderDrawColor(renderer, C(view_selected));
+    SDL_RenderDrawLines(renderer, points, 5);
+}
+
 struct tool tools[] = {
-    { &nodedraw_reset, &nodedraw_reset, &nodedraw_handle_event, &nodedraw_render, "draw nodes" },
-    { &vertmove_select, &vertmove_reset, &vertmove_handle_event, &vertmove_render, "move vertices" },
-    { &nodedel_select, &nodedel_deselect, &nodedel_handle_event, &nodedel_render, "delete nodes" },
-    { &arcdraw_reset, &arcdraw_reset, &arcdraw_handle_event, &arcdraw_render, "draw arcs" },
-    { &rectdraw_reset, &rectdraw_reset, &rectdraw_handle_event, &rectdraw_render, "draw rectangles" },
+    { &nodedraw_reset, &nodedraw_reset,
+      &nodedraw_handle_event, &nodedraw_render,
+      "draw nodes" },
+    { &vertmove_select, &vertmove_reset,
+      &vertmove_handle_event, &vertmove_render,
+      "move vertices" },
+    { &nodedel_select, &nodedel_deselect,
+      &nodedel_handle_event, &nodedel_render,
+      "delete nodes" },
+    { &arcdraw_reset, &arcdraw_reset,
+      &arcdraw_handle_event, &arcdraw_render,
+      "draw arcs" },
+    { &rectdraw_reset, &rectdraw_reset,
+      &rectdraw_handle_event, &rectdraw_render,
+      "draw rectangles" },
+    { &vertsel_reset, &vertsel_reset,
+      &vertsel_handle_event, &vertsel_render,
+      "select vertices" },
 };

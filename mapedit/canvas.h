@@ -37,6 +37,9 @@ void canvas_edit_vertex(vertex_id id, const fpoint *p_abs, const fvector *p_rel)
 vertex_id canvas_find_vertex_near(fpoint p, double snap, fpoint *out);
 const struct vertex *canvas_vertex(vertex_id id);
 
+typedef void (canvas_find_vertex_cb)(vertex_id, void *);
+void canvas_find_vertices_within(fpoint a, fpoint b, canvas_find_vertex_cb *cb, void *rock);
+
 int canvas_handle_event(const SDL_Event *e);
 void canvas_render(SDL_Renderer *renderer);
 

@@ -9,11 +9,10 @@ enum tool_id {
     TOOL_NODEDEL,
     TOOL_ARCDRAW,
     TOOL_RECTDRAW,
+    TOOL_VERTSEL,
 
     TOOL_LASTTOOL, /* keep last */
 };
-
-struct tool;
 
 typedef void (tool_select)(void);
 typedef void (tool_deselect)(void);

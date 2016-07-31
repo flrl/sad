@@ -6,6 +6,7 @@
 #include "mapedit/canvas.h"
 #include "mapedit/colour.h"
 #include "mapedit/geometry.h"
+#include "mapedit/selection.h"
 #include "mapedit/view.h"
 
 const double camera_unitpx = 128;
@@ -257,6 +258,17 @@ void view_render(SDL_Renderer *renderer)
                        points[1].x, points[1].y,
                        points[2].x, points[2].y,
                        C(view_edge));
+        }
+
+        for (i = 0; i < verts_count; i++) {
+            const struct vertex *v = &verts[i];
+            SDL_Point p;
+
+            if (v->id == ID_NONE) continue;
+            if (!selection_has_vertex(v->id)) continue;
+
+            p = point_to_screen(v->p);
+            filledCircleRGBA(renderer, p.x, p.y, 1, C(view_selected));
         }
 
         if (view.show_grid) {
