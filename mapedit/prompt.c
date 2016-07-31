@@ -114,36 +114,37 @@ int prompt_handle_event(const SDL_Event *e)
 
     switch (e->type) {
         case SDL_WINDOWEVENT:
+            handled = 0;
             state->dirty = 1;
             break;
         case SDL_MOUSEBUTTONDOWN:
+            handled = 1;
             mouse.x = e->button.x;
             mouse.y = e->button.y;
             if (!SDL_PointInRect(&mouse, &state->fillrect))
                 done_cancel();
-            handled = 1;
             break;
         case SDL_KEYUP:
             handled = 1;
-            break;
-        case SDL_KEYDOWN:
             if (e->key.keysym.sym == SDLK_RETURN)
                 done_ok();
             else if (e->key.keysym.sym == SDLK_ESCAPE)
                 done_cancel();
-            else if (e->key.keysym.sym == SDLK_BACKSPACE) {
+            break;
+        case SDL_KEYDOWN:
+            handled = 1;
+            if (e->key.keysym.sym == SDLK_BACKSPACE) {
                 size_t len = strlen(state->input);
                 if (len) {
                     state->input[len - 1] = '\0';
                     state->dirty = 1;
                 }
             }
-            handled = 1;
             break;
         case SDL_TEXTINPUT:
+            handled = 1;
             strlcat(state->input, e->text.text, 1024);
             state->dirty = 1;
-            handled = 1;
             break;
     }
 

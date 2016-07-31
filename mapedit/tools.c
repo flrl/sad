@@ -114,6 +114,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
     SDL_Point arrows;
     SDL_Keymod keymod;
     fpoint mouse;
+    int handled = 0;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
     mouse = point_from_screen(tmp);
@@ -126,6 +127,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_KEYUP:
             if (state->n_points == 0) break;
+            handled = 1;
             if (e->key.keysym.sym == SDLK_ESCAPE)
                 nodedraw_reset();
             else if (e->key.keysym.sym == SDLK_RETURN)
@@ -133,6 +135,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
             break;
         case SDL_KEYDOWN:
             if (state->n_points == 0) break;
+            handled = 1;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -144,6 +147,7 @@ static int nodedraw_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
+            handled = 1;
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             nodedraw_start(mouse);
@@ -155,17 +159,19 @@ static int nodedraw_handle_event(const SDL_Event *e)
             nodedraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
-            if (e->button.button == SDL_BUTTON_RIGHT)
-                nodedraw_reset();
-            if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
+            handled = 1;
+            if (e->button.button != SDL_BUTTON_LEFT) {
+                nodedraw_reset();
+                break;
+            }
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             nodedraw_next_point(mouse);
             break;
     }
 
-    return 0;
+    return handled;
 }
 
 static void nodedraw_render(SDL_Renderer *renderer)
@@ -265,6 +271,7 @@ static int vertmove_handle_event(const SDL_Event *e)
     struct vertmove_state *state = &vertmove_state;
     SDL_Point arrows, tmp;
     fpoint mouse;
+    int handled = 0;
 
     SDL_Keymod keymod;
 
@@ -278,20 +285,20 @@ static int vertmove_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_KEYUP:
             if (state->selected == ID_NONE) break;
+            handled = 1;
             if (e->key.keysym.sym == SDLK_ESCAPE) {
                 vertmove_abort(mouse);
-                break;
             }
-            if (e->key.keysym.sym == SDLK_RETURN) {
+            else if (e->key.keysym.sym == SDLK_RETURN) {
                 state->hovered = canvas_find_vertex_near(mouse,
                                                          scalar_from_screen(TOOL_SNAP),
                                                          NULL);
                 state->selected = ID_NONE;
-                break;
             }
             break;
         case SDL_KEYDOWN:
             if (state->selected == ID_NONE) break;
+            handled = 1;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -312,6 +319,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             }
             break;
         case SDL_MOUSEBUTTONUP:
+            handled = 1;
             if (e->button.button != SDL_BUTTON_LEFT) {
                 vertmove_abort(mouse);
                 break;
@@ -332,7 +340,7 @@ static int vertmove_handle_event(const SDL_Event *e)
             break;
     }
 
-    return 0;
+    return handled;
 }
 
 static void vertmove_render(SDL_Renderer *renderer)
@@ -390,6 +398,7 @@ static int nodedel_handle_event(const SDL_Event *e)
     struct nodedel_state *state = &nodedel_state;
     SDL_Point tmp;
     fpoint mouse;
+    int handled = 0;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
     mouse = point_from_screen(tmp);
@@ -401,12 +410,13 @@ static int nodedel_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONUP:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->over == ID_NONE) break;
+            handled = 1;
             canvas_delete_node(state->over);
             state->over = ID_NONE;
             break;
     }
 
-    return 0;
+    return handled;
 }
 
 static void nodedel_render(SDL_Renderer *renderer)
@@ -543,6 +553,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
     struct arcdraw_state *state = &arcdraw_state;
     SDL_Point arrows, tmp;
     fpoint mouse;
+    int handled = 0;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
     mouse = point_from_screen(tmp);
@@ -550,6 +561,8 @@ static int arcdraw_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_KEYUP:
             if (state->n_points == 0) break;
+            if (state->in_prompt) break;
+            handled = 1;
             if (e->key.keysym.sym == SDLK_ESCAPE)
                 arcdraw_reset();
             else if (e->key.keysym.sym == SDLK_RETURN)
@@ -557,6 +570,8 @@ static int arcdraw_handle_event(const SDL_Event *e)
             break;
         case SDL_KEYDOWN:
             if (state->n_points == 0) break;
+            if (state->in_prompt) break;
+            handled = 1;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -569,6 +584,7 @@ static int arcdraw_handle_event(const SDL_Event *e)
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
             if (state->in_prompt) break;
+            handled = 1;
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             arcdraw_start(mouse);
@@ -582,17 +598,19 @@ static int arcdraw_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEBUTTONUP:
             if (state->in_prompt) break;
-            if (e->button.button == SDL_BUTTON_RIGHT)
-                arcdraw_reset();
-            if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points == 0) break;
+            handled = 1;
+            if (e->button.button != SDL_BUTTON_LEFT) {
+                arcdraw_reset();
+                break;
+            }
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             arcdraw_next_point(mouse);
             break;
     }
 
-    return 0;
+    return handled;
 }
 
 static void arcdraw_render(SDL_Renderer *renderer)
@@ -725,6 +743,7 @@ static int rectdraw_handle_event(const SDL_Event *e)
     struct rectdraw_state *state = &rectdraw_state;
     SDL_Point arrows, tmp;
     fpoint mouse;
+    int handled = 0;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
     mouse = point_from_screen(tmp);
@@ -732,6 +751,7 @@ static int rectdraw_handle_event(const SDL_Event *e)
     switch (e->type) {
         case SDL_KEYUP:
             if (state->n_points == 0) break;
+            handled = 1;
             if (e->key.keysym.sym == SDLK_ESCAPE)
                 rectdraw_reset();
             else if (e->key.keysym.sym == SDLK_RETURN)
@@ -739,6 +759,7 @@ static int rectdraw_handle_event(const SDL_Event *e)
             break;
         case SDL_KEYDOWN:
             if (state->n_points == 0) break;
+            handled = 1;
             arrows.x = arrows.y = 0;
             if (e->key.keysym.sym == SDLK_DOWN) arrows.y ++;
             else if (e->key.keysym.sym == SDLK_UP) arrows.y --;
@@ -750,6 +771,7 @@ static int rectdraw_handle_event(const SDL_Event *e)
         case SDL_MOUSEBUTTONDOWN:
             if (e->button.button != SDL_BUTTON_LEFT) break;
             if (state->n_points > 0) break;
+            handled = 1;
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             rectdraw_start(mouse);
@@ -761,18 +783,19 @@ static int rectdraw_handle_event(const SDL_Event *e)
             rectdraw_edit_point(&mouse, NULL);
             break;
         case SDL_MOUSEBUTTONUP:
+            if (state->n_points == 0) break;
+            handled = 1;
             if (e->button.button != SDL_BUTTON_LEFT) {
                 rectdraw_reset();
                 break;
             }
-            if (state->n_points == 0) break;
             if (ID_NONE == canvas_find_vertex_near(mouse, scalar_from_screen(TOOL_SNAP), &mouse))
                 mouse = view_find_gridpoint_near(mouse, scalar_from_screen(TOOL_SNAP));
             rectdraw_next_point(mouse);
             break;
     }
 
-    return 0;
+    return handled;
 }
 
 static void rectdraw_render(SDL_Renderer *renderer)

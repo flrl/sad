@@ -194,7 +194,7 @@ int view_handle_event(const SDL_Event *e)
             break;
         case SDL_MOUSEWHEEL:
             view_move(e->wheel.x, e->wheel.y, e->wheel.direction);
-            break;
+            return 1;
         case SDL_KEYDOWN:
             if (e->key.keysym.sym == SDLK_z) {
                 view_zoom_in();
