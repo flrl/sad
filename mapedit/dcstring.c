@@ -244,6 +244,25 @@ ptrdiff_t dcstring_ndelete(dcstring *dc, ptrdiff_t count)
     }
 }
 
+void dcstring_cursor_left(dcstring *dc)
+{
+    DC_SANITY(dc);
+    if (dc->len_before == 0) return;
+
+    *(DC_PAFTER(dc) - 1) = *(DC_PGAP(dc) - 1);
+    dc->len_before--;
+    dc->len_after++;
+}
+
+void dcstring_cursor_right(dcstring *dc)
+{
+    DC_SANITY(dc);
+    if (dc->len_after == 0) return;
+    *DC_PGAP(dc) = *DC_PAFTER(dc);
+    dc->len_before++;
+    dc->len_after--;
+}
+
 ptrdiff_t dcstring_cursor_move(dcstring *dc, ptrdiff_t by)
 {
     DC_SANITY(dc);

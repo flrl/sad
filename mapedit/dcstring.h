@@ -23,6 +23,8 @@ int dcstring_ninsert(dcstring *dc, size_t len, const char *s);
 
 ptrdiff_t dcstring_ndelete(dcstring *dc, ptrdiff_t count);
 
+void dcstring_cursor_left(dcstring *dc);
+void dcstring_cursor_right(dcstring *dc);
 ptrdiff_t dcstring_cursor_move(dcstring *dc, ptrdiff_t by);
 ptrdiff_t dcstring_cursor_tostart(dcstring *dc);
 ptrdiff_t dcstring_cursor_toend(dcstring *dc);
