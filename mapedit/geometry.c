@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "mapedit/geometry.h"
 
 SDL_Point paddp(SDL_Point a, SDL_Point b)
@@ -95,4 +97,23 @@ fvector projectfv(fvector a, fvector b)
         return result;
     result = scalefv(b, dotfv(a, b) / dotfv(b, b));
     return result;
+}
+
+/* cumulative moving average */
+fvector averagefv(fvector *cma, size_t *counter, fvector v)
+{
+    assert(cma != NULL);
+    assert(counter != NULL);
+
+    if (*counter) {
+        cma->x = (v.x + *counter * (double) cma->x) / (*counter + 1);
+        cma->y = (v.y + *counter * (double) cma->y) / (*counter + 1);
+        ++*counter;
+    }
+    else {
+        *cma = v;
+        *counter = 1;
+    }
+
+    return *cma;
 }

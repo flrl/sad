@@ -30,4 +30,7 @@ fpoint addfp(fpoint p, fvector v);
 fvector subtractfp(fpoint a, fpoint b);
 fvector scalefv(fvector v, double l);
 fvector projectfv(fvector a, fvector b);
+
+fvector averagefv(fvector *cma, size_t *counter, fvector v);
+
 #endif
