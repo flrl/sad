@@ -361,7 +361,7 @@ static void vertmove_render(SDL_Renderer *renderer)
         const struct vertex *vertex = canvas_vertex(state->hovered);
         SDL_Point p = point_to_screen(vertex->p);
 
-        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP,
+        filledCircleRGBA(renderer, p.x, p.y, TOOL_SNAP - 1,
                          C(tool_move_high));
     }
 }
