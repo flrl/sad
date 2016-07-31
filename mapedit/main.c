@@ -108,6 +108,11 @@ static void handle_events(void)
                 tool = &tools[TOOL_NODEDEL];
                 tool->select();
                 break;
+            case SDLK_m:
+                tool->deselect();
+                tool = &tools[TOOL_VERTMOVE];
+                tool->select();
+                break;
             case SDLK_n:
                 tool->deselect();
                 tool = &tools[TOOL_NODEDRAW];
@@ -123,11 +128,6 @@ static void handle_events(void)
                     prompt("save as: ", filename, &filename_ok, NULL, NULL);
                 else
                     canvas_save(filename);
-                break;
-            case SDLK_v:
-                tool->deselect();
-                tool = &tools[TOOL_VERTMOVE];
-                tool->select();
                 break;
         }
     }
