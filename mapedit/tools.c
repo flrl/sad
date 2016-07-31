@@ -477,7 +477,7 @@ static void arcdraw_sectors_ok(const char *str, void *ctx __attribute__((unused)
     tab = atan2(ab.y, ab.x);
     tac = atan2(ac.y, ac.x);
     t = (tac - tab);
-    if (t < 0) t += 2 * M_PI;
+    if (t <= 0) t += 2 * M_PI;
     t /= n_sectors;
 
     a = canvas_find_vertex_near(state->points[0], 0, NULL);
@@ -552,12 +552,17 @@ static void arcdraw_edit_point(const fpoint *p_abs, const SDL_Point *p_rel)
 static int arcdraw_handle_event(const SDL_Event *e)
 {
     struct arcdraw_state *state = &arcdraw_state;
+    SDL_Keymod keymod;
     SDL_Point arrows, tmp;
     fpoint mouse;
     int handled = 0;
 
     SDL_GetMouseState(&tmp.x, &tmp.y);
     mouse = point_from_screen(tmp);
+
+    keymod = SDL_GetModState();
+    if ((keymod & KMOD_SHIFT) && state->n_points > 1)
+        mouse_rotsnap(state->points[0], mouse, &mouse);
 
     switch (e->type) {
         case SDL_KEYUP:
@@ -622,7 +627,6 @@ static void arcdraw_render(SDL_Renderer *renderer)
         point_to_screen(state->points[1]),
         point_to_screen(state->points[2]),
     };
-    SDL_Point ab, ac;
 
     if (state->n_points == 0) return;
 
@@ -633,8 +637,14 @@ static void arcdraw_render(SDL_Renderer *renderer)
                            points[1].x, points[1].y);
     }
     else if (state->n_points == 3) {
+        double t_start, t_end;
+        SDL_Point ab, ac;
+
         ab = psubtractp(points[1], points[0]);
         ac = psubtractp(points[2], points[0]);
+
+        t_start = lround(atan2(ab.y, ab.x) * 180 / M_PI);
+        t_end   = lround(atan2(ac.y, ac.x) * 180 / M_PI);
 
         SDL_SetRenderDrawColor(renderer, C(tool_draw1));
         SDL_RenderDrawLine(renderer,
@@ -644,13 +654,19 @@ static void arcdraw_render(SDL_Renderer *renderer)
                            points[0].x, points[0].y,
                            points[2].x, points[2].y);
 
-        arcRGBA(renderer,
-                points[0].x,
-                points[0].y,
-                lround(lengthp(points[0], points[1])),
-                lround(atan2(ab.y, ab.x) * 180 / M_PI),
-                lround(atan2(ac.y, ac.x) * 180 / M_PI),
-                C(tool_draw0));
+        if (t_start == t_end) {
+            circleRGBA(renderer,
+                       points[0].x, points[0].y,
+                       lround(lengthp(points[0], points[1])),
+                       C(tool_draw0));
+        }
+        else {
+            arcRGBA(renderer,
+                    points[0].x, points[0].y,
+                    lround(lengthp(points[0], points[1])),
+                    t_start, t_end,
+                    C(tool_draw0));
+        }
     }
 }
 
