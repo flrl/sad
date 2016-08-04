@@ -7,6 +7,7 @@ typedef struct s_dcstring dcstring;
 
 dcstring *dcstring_new(const char *initial);
 dcstring *dcstring_clone(const dcstring *dc);
+char *dcstring_release(dcstring **dcp);
 void dcstring_free(dcstring **dcp);
 
 size_t dcstring_len_before(const dcstring *dc);

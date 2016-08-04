@@ -124,6 +124,18 @@ dcstring *dcstring_clone(const dcstring *dc)
     return clone;
 }
 
+char *dcstring_release(dcstring **dcp)
+{
+    char *ret;
+
+    dcstring_cursor_toend(*dcp);
+    ret = (*dcp)->buffer;
+    (*dcp)->buffer = NULL;
+
+    dcstring_free(dcp);
+    return ret;
+}
+
 void dcstring_free(dcstring **dcp)
 {
     dcstring *dc = *dcp;
