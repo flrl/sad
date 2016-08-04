@@ -40,45 +40,37 @@ do {                                                                    \
 
 static int dcstring_fit(dcstring *dc, size_t len)
 {
+    size_t new_size;
+    char *new_buffer;
+
     assert(dc != NULL);
     DC_SANITY(dc);
 
-    if (!dc->buffer || !dc->size) {
-        dc->buffer = malloc(DCSTRING_ALLOC);
-        if (!dc->buffer) return -1;
-        dc->size = DCSTRING_ALLOC;
-        memset(dc->buffer, 0, dc->size);
-        dc->len_before = dc->len_after = 0;
-        return 0;
-    }
-    else if (dc->size - dcstring_len(dc) > len) {
+    if (dcstring_len(dc) + len < dc->size) {
         /* already enough space */
         return 0;
     }
-    else {
-        size_t new_size = dc->size + DCSTRING_ALLOC;
-        char *tmp;
 
-        while (new_size - dcstring_len(dc) < len)
-            new_size += DCSTRING_ALLOC;
+    new_size = dc->size + DCSTRING_ALLOC;
+    while (dcstring_len(dc) + len >= new_size)
+        new_size += DCSTRING_ALLOC;
 
-        tmp = malloc(new_size);
-        if (!tmp) return -1;
+    new_buffer = malloc(new_size);
+    if (!new_buffer) return -1;
 
-        memset(tmp, 0, new_size);
-        if (dc->len_before)
-            memcpy(tmp, dc->buffer, dc->len_before);
-        if (dc->len_after)
-            memcpy(&tmp[new_size - dc->len_after],
-                   DC_PAFTER(dc),
-                   dc->len_after);
+    memset(new_buffer, 0, new_size);
+    if (dc->len_before)
+        memcpy(new_buffer, DC_PBEFORE(dc), dc->len_before);
+    if (dc->len_after)
+        memcpy(&new_buffer[new_size - dc->len_after],
+               DC_PAFTER(dc),
+               dc->len_after);
 
-        free(dc->buffer);
-        dc->buffer = tmp;
-        dc->size = new_size;
+    if (dc->buffer) free(dc->buffer);
+    dc->buffer = new_buffer;
+    dc->size = new_size;
 
-        return 0;
-    }
+    return 0;
 }
 
 dcstring *dcstring_new(const char *initial)
