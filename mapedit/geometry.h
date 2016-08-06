@@ -29,6 +29,7 @@ int same_sidefp(fpoint p1, fpoint p2, fpoint a, fpoint b);
 fpoint addfp(fpoint p, fvector v);
 fvector subtractfp(fpoint a, fpoint b);
 fvector scalefv(fvector v, double l);
+fvector unitfv(fvector v);
 fvector projectfv(fvector a, fvector b);
 
 fvector averagefv(fvector *cma, size_t *counter, fvector v);

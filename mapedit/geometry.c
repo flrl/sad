@@ -90,6 +90,12 @@ fvector scalefv(fvector v, double l)
     return result;
 }
 
+fvector unitfv(fvector v)
+{
+    fvector result = scalefv(v, 1.0 / sqrt(lengthfv(v)));
+    return result;
+}
+
 fvector projectfv(fvector a, fvector b)
 {
     fvector result = { 0.0f, 0.0f };
