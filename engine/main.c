@@ -11,6 +11,10 @@ int main(int argc __attribute__((unused)),
     SDL_Renderer *renderer = NULL;
     int shutdown = 0;
 
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        return 1;
+    }
+
     const uint32_t window_flags = 0;
     window = SDL_CreateWindow("hello world",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
