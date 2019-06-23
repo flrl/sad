@@ -171,15 +171,21 @@ fpoint view_find_gridpoint_near(fpoint p, double snap)
     return p;
 }
 
-static void view_move(int x, int y, unsigned flipped)
+static void view_move(int x, int y, unsigned flipped, unsigned exponential)
 {
     double x2, y2;
 
     if (!view.renderer) return;
 
     if (flipped) { x = -x; y = -y; }
-    x2 = 0.5 * x * x;
-    y2 = 0.5 * y * y;
+    if (exponential) {
+        x2 = 0.5 * x * x;
+        y2 = 0.5 * y * y;
+    }
+    else {
+        x2 = x;
+        y2 = y;
+    }
     view.camera_centre.x -= scalar_from_screen(copysign(x2, x));
     view.camera_centre.y += scalar_from_screen(copysign(y2, y));
 
@@ -193,8 +199,14 @@ int view_handle_event(const SDL_Event *e)
             if (e->window.event != SDL_WINDOWEVENT_SIZE_CHANGED) break;
             view_update();
             break;
+        case SDL_MOUSEMOTION:
+            if ((e->motion.state & SDL_BUTTON_MMASK)) {
+                view_move(e->motion.xrel, -e->motion.yrel, 0, 0);
+                return 1;
+            }
+            break;
         case SDL_MOUSEWHEEL:
-            view_move(e->wheel.x, e->wheel.y, e->wheel.direction);
+            view_move(e->wheel.x, e->wheel.y, e->wheel.direction, 1);
             return 1;
         case SDL_KEYDOWN:
             if (e->key.keysym.sym == SDLK_z) {
