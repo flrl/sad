@@ -27,8 +27,7 @@ static char *get_backup_filename(const char *orig_filename)
     if (!backup_filename) return NULL;
 
     memset(backup_filename, 0, alloc);
-    strlcpy(backup_filename, orig_filename, alloc);
-    strlcat(backup_filename, ".bak", alloc);
+    snprintf(backup_filename, alloc, "%s.bak", orig_filename);
     ext = strrchr(backup_filename, '\0');
 
     for (i = 0; i < KEEP_OLD_VERSIONS; i++) {

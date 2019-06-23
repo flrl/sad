@@ -68,7 +68,7 @@ void prompt(const char *query, const char *initial,
     if (query) state->query = strdup(query);
     state->input = malloc(1024); // FIXME do this properly
     memset(state->input, 0, 1024);
-    if (initial) strlcpy(state->input, initial, 1024);
+    if (initial) snprintf(state->input, 1024, "%s", initial);
     state->ok_cb = ok_cb;
     state->cancel_cb = cancel_cb;
     state->cb_context = cb_context;
@@ -143,7 +143,7 @@ int prompt_handle_event(const SDL_Event *e)
             break;
         case SDL_TEXTINPUT:
             handled = 1;
-            strlcat(state->input, e->text.text, 1024);
+            strncat(state->input, e->text.text, 1024 - strlen(state->input) - 1);
             state->dirty = 1;
             break;
     }
