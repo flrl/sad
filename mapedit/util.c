@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -45,12 +47,20 @@ static char *get_backup_filename(const char *orig_filename)
         r = stat(backup_filename, &stat_buf);
         if (r) continue;
 
+/* XXX i think st_mtim is the modern portable name for this */
+#ifdef HAVE_STRUCT_STAT_ST_MTIMESPEC
         if ((stat_buf.st_mtimespec.tv_sec < oldest_time.tv_sec) ||
             (stat_buf.st_mtimespec.tv_sec == oldest_time.tv_sec &&
              stat_buf.st_mtimespec.tv_nsec < oldest_time.tv_nsec)) {
             oldest_time = stat_buf.st_mtimespec;
             oldest = i;
         }
+#else
+        if (stat_buf.st_mtime < oldest_time.tv_sec) {
+            oldest_time.tv_sec = stat_buf.st_mtime;
+            oldest = i;
+        }
+#endif
     }
 
     /* found an oldest one */

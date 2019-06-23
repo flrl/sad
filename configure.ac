@@ -12,6 +12,8 @@ AC_PROG_CC_C99
 
 AC_CHECK_HEADERS([stdio.h])
 
+AC_CHECK_MEMBERS([struct stat.st_mtim, struct stat.st_mtimespec])
+
 dnl look for SDL
 AM_PATH_SDL2([2.0.4], , AC_MSG_ERROR([SDL2 not found]))
 
