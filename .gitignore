@@ -15,5 +15,7 @@ config.status
 configure
 configure.scan
 sad
+sad.exe
 stamp-h1
 tools/mapedit
+tools/mapedit.exe
